@@ -14,42 +14,34 @@ export default function Home() {
   return (
     <div className="space-y-12">
       {/* Hero Section */}
-      <div className="relative isolate overflow-hidden pt-6 pb-12">
-        {/* Gradient background effect with improved coverage */}
-        <div className="absolute inset-0 -z-10 transform-gpu overflow-hidden">
-          <div
-            className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-indigo-100 to-white opacity-70"
-          />
-          <div
-            className="absolute left-[calc(50%-20rem)] aspect-[1155/678] w-[40rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-25 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
-            style={{
-              clipPath:
-                'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)',
-            }}
-          />
+      <div className="relative isolate overflow-hidden pt-10 pb-16">
+        {/* Single, unified gradient background */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-50 via-indigo-50 to-white"></div>
+          <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-blue-100 to-transparent"></div>
+          <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-purple-100 to-transparent"></div>
         </div>
         
-        <div className="mx-auto max-w-4xl pb-6 sm:pb-10">
-          <div className="text-center px-6 py-8 sm:py-12 backdrop-blur-[2px] bg-white/30 rounded-xl">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
-              Calculate Credit Card
-              <br />
-              Interest & Late Fees
-            </h1>
-            <p className="mt-6 text-lg leading-8 text-gray-700">
-              Get accurate calculations for your credit card charges. Upload your statement or enter details manually.
-            </p>
+        <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="relative">
+            {/* Decorative elements */}
+            <div className="absolute -top-10 -left-10 w-40 h-40 bg-gradient-to-br from-blue-400 to-indigo-400 rounded-full opacity-10 blur-3xl"></div>
+            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-10 blur-3xl"></div>
+            
+            {/* Content box with consistent styling */}
+            <div className="backdrop-blur-sm bg-white/70 shadow-xl rounded-2xl p-8 sm:p-10 border border-gray-100">
+              <div className="text-center">
+                <h1 className="text-4xl font-bold tracking-tight sm:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 mb-6">
+                  Calculate Credit Card
+                  <br />
+                  Interest & Late Fees
+                </h1>
+                <p className="text-lg leading-8 text-gray-700 max-w-2xl mx-auto">
+                  Get accurate calculations for your credit card charges. Upload your statement or enter details manually.
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div className="absolute inset-x-0 top-[calc(100%-10rem)] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[calc(100%-20rem)]">
-          <div
-            className="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-25 sm:left-[calc(50%+36rem)] sm:w-[72.1875rem]"
-            style={{
-              clipPath:
-                'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)',
-            }}
-          />
         </div>
       </div>
 
