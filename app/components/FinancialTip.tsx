@@ -16,6 +16,9 @@ const financialTips = [
   "Pay off your dues before the statement date to maximize your interest-free period!"
 ];
 
+// Default tip to show on first visit
+const DEFAULT_TIP = "Did you know? Even if you pay the minimum due, interest is charged on the remaining balance!";
+
 // Function to break text into chunks preserving words
 function splitTextIntoChunks(text: string, numChunks: number): string[] {
   const words = text.split(' ');
@@ -36,11 +39,26 @@ function splitTextIntoChunks(text: string, numChunks: number): string[] {
 export default function FinancialTip() {
   const [tipLines, setTipLines] = useState<string[]>([]);
   
-  // Set a random tip on page load or refresh
+  // Set tip based on whether this is first visit or refresh
   useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * financialTips.length);
-    const randomTip = financialTips[randomIndex];
-    setTipLines(splitTextIntoChunks(randomTip, 2));
+    // Check if browser environment is available (for localStorage)
+    if (typeof window !== 'undefined') {
+      const hasVisitedBefore = localStorage.getItem('hasVisitedBefore');
+      
+      let tipToShow = DEFAULT_TIP;
+      
+      // If user has visited before, show random tip
+      if (hasVisitedBefore) {
+        const otherTips = financialTips.filter(tip => tip !== DEFAULT_TIP);
+        const randomIndex = Math.floor(Math.random() * otherTips.length);
+        tipToShow = otherTips[randomIndex];
+      } else {
+        // Set flag for future visits
+        localStorage.setItem('hasVisitedBefore', 'true');
+      }
+      
+      setTipLines(splitTextIntoChunks(tipToShow, 2));
+    }
   }, []);
 
   if (tipLines.length === 0) return null;
