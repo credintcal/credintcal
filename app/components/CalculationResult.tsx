@@ -16,6 +16,9 @@ interface CalculationResultProps {
 }
 
 function maskAmount(amount: number): string {
+  if (typeof amount !== 'number' || isNaN(amount)) {
+    return '₹0.00';
+  }
   const amountStr = amount.toFixed(2);
   const [wholePart, decimalPart] = amountStr.split('.');
   const lastDigit = wholePart.slice(-1);
@@ -24,12 +27,19 @@ function maskAmount(amount: number): string {
 }
 
 function calculateTotal(result: CalculationResultProps['result']): number {
-  if (!result.minimumDuePaid) {
+  // Handle nullish values safely
+  const outstandingAmount = result?.outstandingAmount || 0;
+  const interest = result?.interest || 0;
+  const lateFee = result?.lateFee || 0;
+  const minimumDueAmount = result?.minimumDueAmount || 0;
+  const minimumDuePaid = result?.minimumDuePaid || false;
+
+  if (!minimumDuePaid) {
     // If minimum due is not paid, add late fee
-    return result.outstandingAmount + result.interest + result.lateFee;
+    return outstandingAmount + interest + lateFee;
   } else {
     // If minimum due is paid, subtract it from outstanding amount and add interest
-    return (result.outstandingAmount - (result.minimumDueAmount || 0)) + result.interest;
+    return (outstandingAmount - minimumDueAmount) + interest;
   }
 }
 
@@ -38,7 +48,19 @@ export default function CalculationResult({
   isPaid,
   onPayment,
 }: CalculationResultProps) {
-  const totalAmount = calculateTotal(result);
+  // Ensure result has valid data
+  const safeResult = {
+    interest: result?.interest || 0,
+    lateFee: result?.lateFee || 0,
+    totalAmount: result?.totalAmount || 0,
+    outstandingAmount: result?.outstandingAmount || 0,
+    minimumDueAmount: result?.minimumDueAmount || 0,
+    minimumDuePaid: result?.minimumDuePaid || false,
+    paymentStatus: result?.paymentStatus || 'PENDING',
+    ...result
+  };
+
+  const totalAmount = calculateTotal(safeResult);
 
   return (
     <div className="mt-6 bg-white rounded-2xl shadow-lg overflow-hidden">

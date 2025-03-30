@@ -6,6 +6,37 @@ import Transaction from '../../../models/Transaction';
 export async function POST(request: Request) {
   try {
     const data = await request.json();
+    
+    // Ensure MongoDB is connected
+    if (mongodbConnection.readyState !== 1) {
+      await mongodbConnection.asPromise();
+    }
+
+    // Check if this is a request to fetch a transaction by ID
+    if (data.transactionId && !data.outstandingAmount) {
+      const transaction = await Transaction.findById(data.transactionId);
+      
+      if (!transaction) {
+        return NextResponse.json(
+          { error: 'Transaction not found' },
+          { status: 404 }
+        );
+      }
+      
+      // Return complete transaction details
+      return NextResponse.json({
+        interest: transaction.calculatedInterest,
+        lateFee: transaction.lateFee,
+        totalAmount: transaction.totalAmount,
+        outstandingAmount: transaction.outstandingAmount,
+        minimumDueAmount: transaction.minimumDueAmount,
+        minimumDuePaid: transaction.minimumDuePaid,
+        paymentStatus: transaction.paymentStatus,
+        transactionId: transaction._id,
+      });
+    }
+
+    // Regular calculation flow continues below
     const {
       bank,
       outstandingAmount,
@@ -16,11 +47,6 @@ export async function POST(request: Request) {
       minimumDueAmount,
       minimumDuePaid,
     } = data;
-
-    // Ensure MongoDB is connected
-    if (mongodbConnection.readyState !== 1) {
-      await mongodbConnection.asPromise();
-    }
 
     // Calculate days between transaction and payment dates
     const days = calculateDays(new Date(transactionDate), new Date(paymentDate));

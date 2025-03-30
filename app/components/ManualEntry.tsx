@@ -96,25 +96,55 @@ export default function ManualEntry() {
 
   const handlePayment = async () => {
     if (calculationResult?.transactionId) {
-      const success = await initializeRazorpayPayment(calculationResult.transactionId);
-      if (success) {
-        setIsPaid(true);
-        // Fetch updated transaction details
-        try {
-          const response = await fetch('/api/calculate', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              transactionId: calculationResult.transactionId,
-            }),
-          });
-          const result = await response.json();
-          setCalculationResult(result);
-        } catch (error) {
-          console.error('Failed to fetch updated details:', error);
+      try {
+        const success = await initializeRazorpayPayment(calculationResult.transactionId);
+        if (success) {
+          setIsPaid(true);
+          // Fetch updated transaction details
+          try {
+            const response = await fetch('/api/calculate', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                transactionId: calculationResult.transactionId,
+              }),
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Server responded with ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            // Ensure we have the full result structure with all required fields
+            const updatedResult = {
+              ...calculationResult,  // Keep original data as fallback
+              ...result,             // Update with new data
+              // Ensure critical fields are present
+              paymentStatus: result.paymentStatus || calculationResult.paymentStatus,
+              interest: result.interest || calculationResult.interest,
+              lateFee: result.lateFee || calculationResult.lateFee,
+              outstandingAmount: result.outstandingAmount || calculationResult.outstandingAmount,
+              minimumDueAmount: result.minimumDueAmount || calculationResult.minimumDueAmount,
+              minimumDuePaid: typeof result.minimumDuePaid !== 'undefined' ? result.minimumDuePaid : calculationResult.minimumDuePaid,
+              totalAmount: result.totalAmount || calculationResult.totalAmount,
+            };
+            
+            setCalculationResult(updatedResult);
+          } catch (error) {
+            console.error('Failed to fetch updated details:', error);
+            // Update status locally if server fetch fails
+            setCalculationResult({
+              ...calculationResult,
+              paymentStatus: 'COMPLETED'
+            });
+          }
         }
+      } catch (error) {
+        console.error('Payment error:', error);
+        alert('There was an error processing your payment. Please try again.');
       }
     }
   };
