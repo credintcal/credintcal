@@ -1,6 +1,22 @@
-import mongoose from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 
-// Simplified schema without complex TypeScript
+interface ITransaction extends Document {
+  amount: number;
+  transactionDate: Date;
+  dueDate: Date;
+  paymentDate: Date;
+  bank: 'HDFC' | 'SBI' | 'ICICI' | 'Axis' | 'Kotak' | 'Yes' | 'PNB' | 'IDFC' | 'AmericanExpress' | 'Citibank';
+  outstandingAmount: number;
+  minimumDuePaid: boolean;
+  minimumDueAmount: number;
+  calculatedInterest: number;
+  lateFee: number;
+  totalAmount: number;
+  paymentStatus: 'PENDING' | 'COMPLETED';
+  razorpayPaymentId?: string;
+  createdAt: Date;
+}
+
 const transactionSchema = new mongoose.Schema({
   amount: {
     type: Number,
@@ -61,8 +77,6 @@ const transactionSchema = new mongoose.Schema({
   },
 });
 
-// Using a simpler model definition without TypeScript generics
-// @ts-ignore - Ignore TypeScript errors for deployment
-const Transaction = mongoose.models.Transaction || mongoose.model('Transaction', transactionSchema);
+const Transaction = mongoose.models.Transaction || mongoose.model<ITransaction>('Transaction', transactionSchema);
 
 export default Transaction; 

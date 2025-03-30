@@ -48,18 +48,17 @@ export async function PUT(request: Request) {
       .digest('hex');
 
     if (expectedSignature === razorpaySignature) {
-      // Use direct string ID without ObjectId conversion
-      // @ts-ignore - Temporarily ignore type issues for deployment
       const result = await Transaction.updateOne(
         { _id: transactionId },
-        { 
-          paymentStatus: 'COMPLETED',
-          razorpayPaymentId 
+        {
+          $set: {
+            paymentStatus: 'COMPLETED' as const,
+            razorpayPaymentId
+          }
         }
       );
 
-      // @ts-ignore - Temporarily ignore type issues for deployment
-      if (result && result.matchedCount === 0) {
+      if (!result.matchedCount) {
         return NextResponse.json(
           { error: 'Transaction not found' },
           { status: 404 }
