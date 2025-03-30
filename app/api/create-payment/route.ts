@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import razorpay from '../../../config/razorpay';
-import Transaction from '../../../models/Transaction';
+import Transaction, { ITransactionDocument } from '../../../models/Transaction';
 import crypto from 'crypto';
-import { connectDB } from '../../../utils/db';
+import { connectDB } from '../../../lib/db';
+import mongoose from 'mongoose';
 
 export async function POST(request: Request) {
   try {
@@ -48,17 +49,15 @@ export async function PUT(request: Request) {
       .digest('hex');
 
     if (expectedSignature === razorpaySignature) {
-      // Update transaction status
-      const updatedTransaction = await Transaction.findOneAndUpdate(
-        { _id: transactionId },
+      // Update transaction status using mongoose types
+      const updatedTransaction = await Transaction.findByIdAndUpdate(
+        transactionId,
         {
-          $set: {
-            paymentStatus: 'COMPLETED',
-            razorpayPaymentId,
-          }
+          paymentStatus: 'COMPLETED' as const,
+          razorpayPaymentId,
         },
         { new: true }
-      );
+      ).exec();
 
       if (!updatedTransaction) {
         return NextResponse.json(

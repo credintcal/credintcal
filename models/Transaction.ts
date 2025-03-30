@@ -1,6 +1,25 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Model } from 'mongoose';
 
-const transactionSchema = new mongoose.Schema({
+export interface ITransaction {
+  amount: number;
+  transactionDate: Date;
+  dueDate: Date;
+  paymentDate: Date;
+  bank: 'HDFC' | 'SBI' | 'ICICI' | 'Axis' | 'Kotak' | 'Yes' | 'PNB' | 'IDFC' | 'AmericanExpress' | 'Citibank';
+  outstandingAmount: number;
+  minimumDuePaid: boolean;
+  minimumDueAmount: number;
+  calculatedInterest: number;
+  lateFee: number;
+  totalAmount: number;
+  paymentStatus: 'PENDING' | 'COMPLETED';
+  razorpayPaymentId?: string;
+  createdAt: Date;
+}
+
+export interface ITransactionDocument extends ITransaction, Document {}
+
+const transactionSchema = new mongoose.Schema<ITransactionDocument>({
   amount: {
     type: Number,
     required: true,
@@ -60,6 +79,6 @@ const transactionSchema = new mongoose.Schema({
   },
 });
 
-const Transaction = mongoose.models.Transaction || mongoose.model('Transaction', transactionSchema);
+const Transaction: Model<ITransactionDocument> = mongoose.models.Transaction || mongoose.model<ITransactionDocument>('Transaction', transactionSchema);
 
 export default Transaction; 
