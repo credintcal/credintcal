@@ -73,7 +73,7 @@ export default function RootLayout({
           {/* Footer */}
           <footer className="bg-gray-900">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <CalculatorIcon className="h-6 w-6 text-blue-400" />
@@ -100,12 +100,29 @@ export default function RootLayout({
                   </ul>
                 </div>
                 
-                {/* Third column for balance in footer */}
+                {/* Improved Did You Know section */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">Did You Know?</h3>
-                  <p className="text-gray-400 text-sm">
-                    Always pay your full credit card bill before the due date to avoid interest charges and maintain a good credit score.
-                  </p>
+                  <h3 className="text-lg font-semibold text-white">Credit Card Tips</h3>
+                  <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                    <div className="flex items-start space-x-3">
+                      <div className="p-1.5 bg-blue-900/50 rounded-full flex-shrink-0 mt-0.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-gray-300 text-sm leading-relaxed">
+                        Always pay your full credit card bill before the due date to avoid interest charges and maintain a good credit score.
+                      </p>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-700">
+                      <button className="text-sm font-medium text-blue-400 hover:text-blue-300 flex items-center">
+                        <span>More tips coming soon</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="ml-1 h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
