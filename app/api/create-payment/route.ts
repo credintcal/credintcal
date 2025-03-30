@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import razorpay from '../../../config/razorpay';
 import Transaction from '../../../models/Transaction';
 import crypto from 'crypto';
+import { connectDB } from '../../../utils/db';
 
 export async function POST(request: Request) {
   try {
@@ -30,6 +31,8 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    await connectDB();
+    
     const {
       transactionId,
       razorpayPaymentId,
@@ -40,16 +43,29 @@ export async function PUT(request: Request) {
     // Verify payment signature
     const body = razorpayOrderId + '|' + razorpayPaymentId;
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'GgcoqvoGxKzGqCAYbSnIZhdV')
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || '')
       .update(body.toString())
       .digest('hex');
 
     if (expectedSignature === razorpaySignature) {
       // Update transaction status
-      await Transaction.findByIdAndUpdate(transactionId, {
-        paymentStatus: 'COMPLETED',
-        razorpayPaymentId,
-      });
+      const updatedTransaction = await Transaction.findOneAndUpdate(
+        { _id: transactionId },
+        {
+          $set: {
+            paymentStatus: 'COMPLETED',
+            razorpayPaymentId,
+          }
+        },
+        { new: true }
+      );
+
+      if (!updatedTransaction) {
+        return NextResponse.json(
+          { error: 'Transaction not found' },
+          { status: 404 }
+        );
+      }
 
       return NextResponse.json({ status: 'success' });
     }
