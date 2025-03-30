@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import razorpay from '../../../config/razorpay';
 import Transaction from '../../../models/Transaction';
 import crypto from 'crypto';
-import { connectDB } from '../../../lib/db';
+import mongodbConnection from '../../../config/mongodb';
 
 export async function POST(request: Request) {
   try {
@@ -31,7 +31,10 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    await connectDB();
+    // Ensure MongoDB is connected
+    if (mongodbConnection.readyState !== 1) {
+      await mongodbConnection.asPromise();
+    }
     
     const {
       transactionId,

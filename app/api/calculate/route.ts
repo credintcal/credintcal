@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { calculateDays, calculateInterest, getLateFee } from '../../../utils/calculations';
-import connectDB from '../../../config/mongodb';
+import mongodbConnection from '../../../config/mongodb';
 import Transaction from '../../../models/Transaction';
 
 export async function POST(request: Request) {
@@ -17,8 +17,10 @@ export async function POST(request: Request) {
       minimumDuePaid,
     } = data;
 
-    // Connect to MongoDB
-    await connectDB();
+    // Ensure MongoDB is connected
+    if (mongodbConnection.readyState !== 1) {
+      await mongodbConnection.asPromise();
+    }
 
     // Calculate days between transaction and payment dates
     const days = calculateDays(new Date(transactionDate), new Date(paymentDate));
