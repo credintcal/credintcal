@@ -1,61 +1,20 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import ManualEntry from './components/ManualEntry';
 import PdfUpload from './components/PdfUpload';
 import { Tab } from '@headlessui/react';
-import { DocumentTextIcon, CalculatorIcon, SparklesIcon, LightBulbIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, CalculatorIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-const financialTips = [
-  "Did you know? Even if you pay the minimum due, interest is charged on the remaining balance!",
-  "Avoid hidden charges! Always pay your credit card bill in full to escape high-interest rates.",
-  "Late payment? Your credit score takes a hit! Always pay on time to maintain a healthy score.",
-  "Interest-free period? Only if you clear the full bill! Else, interest starts from Day 1.",
-  "Missed your payment deadline? Late fees and interest charges can add up fast!",
-  "One late payment can stay on your credit report for years! Stay disciplined.",
-  "Credit limit ≠ Spending limit! Use only 30-40% of your limit to stay financially healthy.",
-  "Maximize your rewards! Use credit cards for planned expenses and pay on time.",
-  "Track your spending! Small purchases add up quickly when paid with a credit card.",
-  "Pay off your dues before the statement date to maximize your interest-free period!"
-];
-
-// Function to break text into chunks preserving words
-function splitTextIntoChunks(text: string, numChunks: number): string[] {
-  const words = text.split(' ');
-  const result: string[] = [];
-  const chunkSize = Math.ceil(words.length / numChunks);
-  
-  for (let i = 0; i < numChunks; i++) {
-    const start = i * chunkSize;
-    const end = Math.min(start + chunkSize, words.length);
-    if (start < words.length) {
-      result.push(words.slice(start, end).join(' '));
-    }
-  }
-  
-  return result;
-}
-
 export default function Home() {
-  const [tip, setTip] = useState<string>(financialTips[0]);
-  const [tipLines, setTipLines] = useState<string[]>([]);
-  
-  // Set a random tip on page load or refresh
-  useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * financialTips.length);
-    const randomTip = financialTips[randomIndex];
-    setTip(randomTip);
-    setTipLines(splitTextIntoChunks(randomTip, 3));
-  }, []);
-
   return (
     <div className="space-y-12">
       {/* Hero Section */}
-      <div className="relative isolate overflow-hidden">
+      <div className="relative isolate overflow-hidden pt-10">
         <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
           <div
             className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
@@ -76,27 +35,6 @@ export default function Home() {
             <p className="mt-6 text-lg leading-8 text-gray-600">
               Get accurate calculations for your credit card charges. Upload your statement or enter details manually.
             </p>
-          </div>
-        </div>
-
-        {/* Financial Tip Section - Better positioning outside the main title area */}
-        <div className="max-w-3xl mx-auto -mt-4 mb-12 px-4 sm:px-6 lg:px-0">
-          <div className="relative group w-full">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 to-amber-300 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-            <div className="relative p-5 bg-amber-50 rounded-lg shadow-sm border border-amber-100 leading-none flex items-start space-x-3">
-              <div className="bg-amber-100 p-2 rounded-full flex-shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                {tipLines.map((line, index) => (
-                  <p key={index} className={`${index === 0 ? 'text-amber-900 font-medium text-md' : 'text-amber-800 font-normal text-md'} ${index > 0 ? 'mt-1' : ''}`}>
-                    {line}
-                  </p>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
 

@@ -5,6 +5,7 @@ import './globals.css'
 import Link from 'next/link'
 import { CalculatorIcon } from '@heroicons/react/24/outline'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
+import FinancialTip from './components/FinancialTip'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -32,7 +33,7 @@ export default function RootLayout({
           {/* Header */}
           <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center py-6">
+              <div className="flex justify-between items-center py-4">
                 <Link href="/" className="flex items-center group">
                   <div className="flex items-center space-x-3">
                     <div className="bg-white/10 rounded-lg p-2 group-hover:bg-white/20 transition-colors">
@@ -48,13 +49,23 @@ export default function RootLayout({
                     </div>
                   </div>
                 </Link>
+                
+                {/* Financial Tip in Header */}
+                <div className="hidden md:block max-w-md">
+                  <FinancialTip />
+                </div>
+              </div>
+              
+              {/* Mobile Financial Tip - Shows only on small screens */}
+              <div className="md:hidden pb-4">
+                <FinancialTip />
               </div>
             </div>
           </header>
 
           {/* Main content */}
-          <main className="flex-grow bg-gradient-to-b from-gray-50 to-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <main className="flex-grow bg-gradient-to-b from-blue-50 to-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0">
               {children}
             </div>
           </main>
@@ -62,7 +73,7 @@ export default function RootLayout({
           {/* Footer */}
           <footer className="bg-gray-900">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <CalculatorIcon className="h-6 w-6 text-blue-400" />
@@ -87,6 +98,14 @@ export default function RootLayout({
                       </li>
                     ))}
                   </ul>
+                </div>
+                
+                {/* Third column for balance in footer */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white">Did You Know?</h3>
+                  <p className="text-gray-400 text-sm">
+                    Always pay your full credit card bill before the due date to avoid interest charges and maintain a good credit score.
+                  </p>
                 </div>
               </div>
 
