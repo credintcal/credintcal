@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import razorpay from '../../../config/razorpay';
-import Transaction, { ITransactionDocument } from '../../../models/Transaction';
+import Transaction from '../../../models/Transaction';
 import crypto from 'crypto';
 import { connectDB } from '../../../lib/db';
-import mongoose from 'mongoose';
+import { Types } from 'mongoose';
 
 export async function POST(request: Request) {
   try {
@@ -49,17 +49,16 @@ export async function PUT(request: Request) {
       .digest('hex');
 
     if (expectedSignature === razorpaySignature) {
-      // Update transaction status using mongoose types
-      const updatedTransaction = await Transaction.findByIdAndUpdate(
-        transactionId,
-        {
-          paymentStatus: 'COMPLETED' as const,
-          razorpayPaymentId,
-        },
-        { new: true }
-      ).exec();
+      // Update transaction status
+      const result = await Transaction.updateOne(
+        { _id: new Types.ObjectId(transactionId) },
+        { 
+          paymentStatus: 'COMPLETED',
+          razorpayPaymentId 
+        }
+      );
 
-      if (!updatedTransaction) {
+      if (result.matchedCount === 0) {
         return NextResponse.json(
           { error: 'Transaction not found' },
           { status: 404 }
