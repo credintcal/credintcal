@@ -15,7 +15,6 @@ const schema = z.object({
   minimumDueAmount: z.number().min(0, 'Minimum due amount must be positive'),
   minimumDuePaid: z.boolean(),
   transactionAmount: z.number().min(0, 'Transaction amount must be positive'),
-  interestRate: z.number().min(0, 'Interest rate must be positive'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -192,28 +191,6 @@ export default function ManualEntry() {
                 </div>
                 {errors.minimumDueAmount && (
                   <p className="mt-1 text-sm text-red-600">{errors.minimumDueAmount.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="interestRate" className="block text-sm font-medium text-gray-700">
-                  Interest Rate (%)
-                </label>
-                <div className="mt-1 relative rounded-xl shadow-sm">
-                  <input
-                    type="number"
-                    id="interestRate"
-                    step="0.01"
-                    {...register('interestRate', { valueAsNumber: true })}
-                    className="block w-full pl-3 pr-12 py-3 border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 shadow-sm hover:border-indigo-300"
-                    placeholder="3.5"
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">%</span>
-                  </div>
-                </div>
-                {errors.interestRate && (
-                  <p className="mt-1 text-sm text-red-600">{errors.interestRate.message}</p>
                 )}
               </div>
             </div>
