@@ -84,16 +84,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Credit Card Tips Section */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 shadow-sm border border-blue-100">
-        <h3 className="text-xl font-semibold text-blue-800 mb-4">Credit Card Tips</h3>
-        <p className="text-gray-700 mb-2">
-          <span className="inline-block mr-2">💡</span>
-          Always pay your full credit card bill before the due date to avoid interest charges and maintain a good credit score.
-        </p>
-        <p className="text-gray-600 text-sm italic">More tips coming soon</p>
-      </div>
-
       {/* Calculator Tabs */}
       <div className="relative">
         <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-20"></div>
