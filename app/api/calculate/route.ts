@@ -70,6 +70,9 @@ export async function POST(request: Request) {
       interest,
       lateFee,
       totalAmount,
+      outstandingAmount: data.outstandingAmount,
+      minimumDueAmount: data.minimumDueAmount,
+      minimumDuePaid: data.minimumDuePaid,
       paymentStatus: 'PENDING',
       transactionId: transaction._id,
     });

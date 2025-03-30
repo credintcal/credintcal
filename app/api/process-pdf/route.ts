@@ -54,6 +54,7 @@ export async function POST(request: Request) {
 
     let totalInterest = 0;
     let lateFee = 0;
+    let lastTransactionRecord;
 
     // Calculate interest for each transaction
     for (const transaction of transactions) {
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
         paymentStatus: 'PENDING',
       });
 
-      await transactionRecord.save();
+      lastTransactionRecord = await transactionRecord.save();
     }
 
     const totalAmount = totalInterest + lateFee;
@@ -99,8 +100,12 @@ export async function POST(request: Request) {
       interest: totalInterest,
       lateFee,
       totalAmount,
+      outstandingAmount,
+      minimumDueAmount,
+      minimumDuePaid,
       paymentStatus: 'PENDING',
       transactionCount: transactions.length,
+      transactionId: lastTransactionRecord._id,
     });
   } catch (error) {
     console.error('PDF processing error:', error);

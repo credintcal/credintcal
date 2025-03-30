@@ -4,7 +4,7 @@ declare global {
   }
 }
 
-export const initializeRazorpayPayment = async (transactionId: string) => {
+export const initializeRazorpayPayment = async (transactionId: string): Promise<boolean> => {
   try {
     // Load Razorpay script
     await loadRazorpayScript();
@@ -20,56 +20,66 @@ export const initializeRazorpayPayment = async (transactionId: string) => {
 
     const { orderId, amount, currency } = await response.json();
 
-    // Initialize Razorpay options
-    const options = {
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-      amount,
-      currency,
-      name: 'Credit Card Fee Calculator',
-      description: 'Unlock Full Amount',
-      order_id: orderId,
-      handler: async function (response: any) {
-        try {
-          const verificationResponse = await fetch('/api/create-payment', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              transactionId,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpayOrderId: response.razorpay_order_id,
-              razorpaySignature: response.razorpay_signature,
-            }),
-          });
+    return new Promise((resolve) => {
+      // Initialize Razorpay options
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount,
+        currency,
+        name: 'Credit Card Fee Calculator',
+        description: 'Unlock Full Amount',
+        order_id: orderId,
+        handler: async function (response: any) {
+          try {
+            const verificationResponse = await fetch('/api/create-payment', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                transactionId,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
+              }),
+            });
 
-          const data = await verificationResponse.json();
-          if (data.status === 'success') {
-            window.location.reload();
-          } else {
+            const data = await verificationResponse.json();
+            if (data.status === 'success') {
+              resolve(true);
+            } else {
+              alert('Payment verification failed. Please try again.');
+              resolve(false);
+            }
+          } catch (error) {
+            console.error('Payment verification error:', error);
             alert('Payment verification failed. Please try again.');
+            resolve(false);
           }
-        } catch (error) {
-          console.error('Payment verification error:', error);
-          alert('Payment verification failed. Please try again.');
-        }
-      },
-      prefill: {
-        name: '',
-        email: '',
-        contact: '',
-      },
-      theme: {
-        color: '#2563EB',
-      },
-    };
+        },
+        modal: {
+          ondismiss: function() {
+            resolve(false);
+          }
+        },
+        prefill: {
+          name: '',
+          email: '',
+          contact: '',
+        },
+        theme: {
+          color: '#2563EB',
+        },
+      };
 
-    // Create Razorpay instance
-    const razorpay = new window.Razorpay(options);
-    razorpay.open();
+      // Create Razorpay instance
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    });
   } catch (error) {
     console.error('Payment initialization error:', error);
     alert('Failed to initialize payment. Please try again.');
+    return false;
   }
 };
 

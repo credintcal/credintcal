@@ -6,10 +6,31 @@ interface CalculationResultProps {
     interest: number;
     lateFee: number;
     totalAmount: number;
+    outstandingAmount: number;
+    minimumDueAmount?: number;
+    minimumDuePaid: boolean;
     paymentStatus: string;
   };
   isPaid: boolean;
   onPayment: () => void;
+}
+
+function maskAmount(amount: number): string {
+  const amountStr = amount.toFixed(2);
+  const [wholePart, decimalPart] = amountStr.split('.');
+  const lastDigit = wholePart.slice(-1);
+  const maskedWholePart = 'X'.repeat(wholePart.length - 1) + lastDigit;
+  return `₹${maskedWholePart}.${decimalPart}`;
+}
+
+function calculateTotal(result: CalculationResultProps['result']): number {
+  if (!result.minimumDuePaid) {
+    // If minimum due is not paid, add late fee
+    return result.outstandingAmount + result.interest + result.lateFee;
+  } else {
+    // If minimum due is paid, subtract it from outstanding amount and add interest
+    return (result.outstandingAmount - (result.minimumDueAmount || 0)) + result.interest;
+  }
 }
 
 export default function CalculationResult({
@@ -17,6 +38,8 @@ export default function CalculationResult({
   isPaid,
   onPayment,
 }: CalculationResultProps) {
+  const totalAmount = calculateTotal(result);
+
   return (
     <div className="mt-6 bg-white rounded-2xl shadow-lg overflow-hidden">
       <div className="px-6 py-8">
@@ -42,7 +65,10 @@ export default function CalculationResult({
               <CurrencyRupeeIcon className="h-5 w-5 text-blue-600" />
             </div>
             <p className="mt-2 text-2xl font-bold text-blue-900">
-              ₹{result.interest.toFixed(2)}
+              {isPaid || result.paymentStatus === 'COMPLETED' 
+                ? `₹${result.interest.toFixed(2)}`
+                : maskAmount(result.interest)
+              }
             </p>
           </div>
 
@@ -52,7 +78,10 @@ export default function CalculationResult({
               <CurrencyRupeeIcon className="h-5 w-5 text-red-600" />
             </div>
             <p className="mt-2 text-2xl font-bold text-red-900">
-              ₹{result.lateFee.toFixed(2)}
+              {isPaid || result.paymentStatus === 'COMPLETED'
+                ? `₹${result.lateFee.toFixed(2)}`
+                : maskAmount(result.lateFee)
+              }
             </p>
           </div>
 
@@ -62,7 +91,10 @@ export default function CalculationResult({
               <CurrencyRupeeIcon className="h-5 w-5 text-green-600" />
             </div>
             <p className="mt-2 text-2xl font-bold text-green-900">
-              ₹{result.totalAmount.toFixed(2)}
+              {isPaid || result.paymentStatus === 'COMPLETED'
+                ? `₹${totalAmount.toFixed(2)}`
+                : maskAmount(totalAmount)
+              }
             </p>
           </div>
         </div>
@@ -93,7 +125,13 @@ export default function CalculationResult({
                 </p>
               </div>
             </div>
-            {/* Add additional details here */}
+            <div className="mt-4 space-y-2 text-sm text-gray-600">
+              <p>Outstanding Amount: ₹{result.outstandingAmount.toFixed(2)}</p>
+              {result.minimumDueAmount && (
+                <p>Minimum Due Amount: ₹{result.minimumDueAmount.toFixed(2)}</p>
+              )}
+              <p>Status: {result.minimumDuePaid ? 'Minimum Due Paid' : 'Minimum Due Not Paid'}</p>
+            </div>
           </div>
         )}
       </div>
