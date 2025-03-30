@@ -7,7 +7,7 @@ export default function About() {
         {/* Company Overview Section */}
         <section className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8">
           <p className="text-lg text-gray-700 leading-relaxed">
-            At Credintcal, we simplify credit card fee calculations, helping you avoid hidden charges and optimize your payments. 
+            At Credbill, we simplify credit card fee calculations, helping you avoid hidden charges and optimize your payments. 
             Our goal is to empower users with financial awareness, ensuring smart credit card usage.
           </p>
         </section>
@@ -18,7 +18,7 @@ export default function About() {
           <div className="bg-white rounded-2xl shadow-sm p-8 space-y-6">
             <div className="space-y-4">
               <p className="text-gray-700 leading-relaxed">
-                Credintcal is founded by <span className="font-semibold">Aditya Nandagiri</span>, an award-winning 
+                Credbill is founded by <span className="font-semibold">Aditya Nandagiri</span>, an award-winning 
                 innovator recognized by the State Innovation Cell, Government of Telangana for four years. With expertise 
                 in First Principles Innovation, he has led multiple startups, secured investments, and developed patented products.
               </p>
@@ -40,7 +40,7 @@ export default function About() {
         <section className="border-t border-gray-200 pt-12">
           <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl p-8">
             <p className="text-lg font-medium text-gray-900 italic">
-              With Credintcal, take control of your credit card payments, avoid unnecessary fees, and make informed financial decisions!
+              With Credbill, take control of your credit card payments, avoid unnecessary fees, and make informed financial decisions!
             </p>
           </div>
         </section>

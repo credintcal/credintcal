@@ -9,7 +9,7 @@ import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Credintcal - Credit Card Interest & Late Fee Calculator by BeyondX',
+  title: 'Credbill - Credit Card Interest & Late Fee Calculator by BeyondX',
   description: 'Calculate credit card interest charges and late fees accurately. A product by BeyondX Informatics Analytics Pvt Ltd.',
 }
 
@@ -40,7 +40,7 @@ export default function RootLayout({
                     </div>
                     <div>
                       <span className="text-2xl font-bold text-white">
-                        Credintcal
+                        Credbill
                       </span>
                       <span className="block text-xs text-blue-200">
                         by BeyondX
@@ -66,7 +66,7 @@ export default function RootLayout({
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <CalculatorIcon className="h-6 w-6 text-blue-400" />
-                    <span className="text-xl font-semibold text-white">Credintcal</span>
+                    <span className="text-xl font-semibold text-white">Credbill</span>
                   </div>
                   <p className="text-gray-400 text-sm">
                     A product by BeyondX Informatics Analytics Pvt Ltd.
