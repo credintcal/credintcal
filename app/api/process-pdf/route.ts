@@ -2,10 +2,19 @@ import { NextResponse } from 'next/server';
 import { calculateDays, calculateInterest, getLateFee } from '../../../utils/calculations';
 import mongodbConnection from '../../../config/mongodb';
 import Transaction from '../../../models/Transaction';
-import { parse } from 'pdf-parse';
+
+// Only import pdf-parse when needed (not at build time)
+// This prevents it from trying to access test files during build
+let parse: any = null;
 
 export async function POST(request: Request) {
   try {
+    // Dynamically import pdf-parse only when this function is called at runtime
+    if (!parse) {
+      const pdfParse = await import('pdf-parse');
+      parse = pdfParse.default;
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const jsonData = formData.get('data') as string;
