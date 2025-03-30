@@ -26,15 +26,29 @@ export default function ManualEntry() {
   const [calculationResult, setCalculationResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
+  const [minDuePaid, setMinDuePaid] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      outstandingAmount: 0,
+      minimumDueAmount: 0, 
+      transactionAmount: 0,
+      minimumDuePaid: false
+    }
   });
+
+  // Update form value when radio changes
+  const handleMinDuePaidChange = (value: boolean) => {
+    setMinDuePaid(value);
+    setValue('minimumDuePaid', value);
+  };
 
   const onSubmit = async (data: FormData) => {
     if (!transactionDate || !dueDate || !paymentDate) {
@@ -44,6 +58,14 @@ export default function ManualEntry() {
 
     setIsLoading(true);
     try {
+      console.log("Submitting data:", {
+        ...data,
+        transactionDate,
+        dueDate,
+        paymentDate,
+        minimumDuePaid: minDuePaid
+      });
+      
       const response = await fetch('/api/calculate', {
         method: 'POST',
         headers: {
@@ -54,10 +76,16 @@ export default function ManualEntry() {
           transactionDate,
           dueDate,
           paymentDate,
+          minimumDuePaid: minDuePaid
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+      }
+
       const result = await response.json();
+      console.log("Calculation result:", result);
       setCalculationResult(result);
     } catch (error) {
       console.error('Calculation failed:', error);
@@ -208,8 +236,9 @@ export default function ManualEntry() {
                     <input
                       id="minimumDuePaid-yes"
                       type="radio"
-                      value="true"
-                      {...register('minimumDuePaid')}
+                      name="minimumDuePaid"
+                      checked={minDuePaid === true}
+                      onChange={() => handleMinDuePaidChange(true)}
                       className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
                     />
                     <label htmlFor="minimumDuePaid-yes" className="ml-3 block text-sm font-medium text-gray-700">
@@ -220,8 +249,9 @@ export default function ManualEntry() {
                     <input
                       id="minimumDuePaid-no"
                       type="radio"
-                      value="false"
-                      {...register('minimumDuePaid')}
+                      name="minimumDuePaid"
+                      checked={minDuePaid === false}
+                      onChange={() => handleMinDuePaidChange(false)}
                       className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
                     />
                     <label htmlFor="minimumDuePaid-no" className="ml-3 block text-sm font-medium text-gray-700">
