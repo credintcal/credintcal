@@ -10,6 +10,7 @@ import * as z from 'zod';
 import { initializeRazorpayPayment } from '../../utils/payment';
 import CalculationResult from './CalculationResult';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
+import { LightBulbIcon } from '@heroicons/react/24/outline';
 
 const schema = z.object({
   bank: z.string().min(1, 'Bank is required'),
@@ -126,49 +127,84 @@ export default function PdfUpload() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-6">
-        <div className="flex items-center space-x-3">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-          </svg>
-          <p className="text-sm text-gray-600">
-            <span className="font-medium">Pro tip:</span> For the most reliable experience, we recommend using the Manual Entry option. PDF upload feature is currently in beta testing.
-          </p>
+      <div className="relative group">
+        <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-xl blur opacity-20 group-hover:opacity-30 transition duration-300"></div>
+        <div className="relative flex items-start p-5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100">
+          <div className="flex-shrink-0 mr-4">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" />
+              </svg>
+            </div>
+          </div>
+          <div>
+            <h3 className="text-md font-bold text-blue-800 mb-1">Pro Tip</h3>
+            <p className="text-sm text-gray-700 leading-relaxed">
+              For the most reliable experience, we recommend using the <span className="font-semibold text-indigo-600">Manual Entry</span> option. PDF upload feature is currently in beta testing.
+            </p>
+          </div>
         </div>
       </div>
+
+      {!isLoading && (
+        <div className="mt-2">
+          <div className="rounded-xl bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 p-4 border border-indigo-100">
+            <div className="flex items-center">
+              <span className="inline-flex items-center justify-center p-2 bg-indigo-100 rounded-full mr-3">
+                <LightBulbIcon className="h-5 w-5 text-indigo-600" />
+              </span>
+              <h4 className="font-medium text-indigo-700">Pro tip</h4>
+            </div>
+            <p className="mt-1 text-sm text-gray-600 ml-12">
+              For accurate results, ensure your PDF statement is from a recognized bank. 
+              The clearer the data format, the better the results.
+            </p>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300
-            ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50 hover:shadow-md'}`}
+          className={`overflow-hidden relative border-2 dashed rounded-2xl transition-all duration-300 group
+            ${isDragActive 
+              ? 'border-blue-500 bg-blue-50 shadow-lg' 
+              : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50 hover:shadow-md'
+            }`}
         >
-          <input {...getInputProps()} />
-          {file ? (
-            <div className="space-y-2">
-              <div className="flex items-center justify-center text-blue-600">
-                <DocumentTextIcon className="h-8 w-8" />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-white/10 to-indigo-50/30 rounded-2xl"></div>
+          <div className="p-10 text-center relative">
+            <input {...getInputProps()} />
+            {file ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-center text-blue-600">
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <DocumentTextIcon className="h-8 w-8" />
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-gray-900 mt-2">
+                  {file.name}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Click or drag to replace
+                </p>
               </div>
-              <p className="text-sm font-medium text-gray-900">
-                {file.name}
-              </p>
-              <p className="text-xs text-gray-500">
-                Click or drag to replace
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="flex items-center justify-center text-gray-400">
-                <DocumentTextIcon className="h-8 w-8" />
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-center text-gray-400">
+                  <div className="p-3 bg-gray-100 rounded-full group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors duration-300">
+                    <DocumentTextIcon className="h-8 w-8" />
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-gray-900 mt-2">
+                  Drag & drop your PDF statement here
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  or click to select a file (max 10MB)
+                </p>
               </div>
-              <p className="text-sm font-medium text-gray-900">
-                Drag & drop your PDF statement here
-              </p>
-              <p className="text-xs text-gray-500">
-                or click to select a file (max 10MB)
-              </p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -176,7 +212,7 @@ export default function PdfUpload() {
             <label className="block text-sm font-medium text-gray-700">Bank</label>
             <select
               {...register('bank')}
-              className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
+              className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
             >
               <option value="">Select a bank</option>
               {banks.map((bank) => (
@@ -197,7 +233,7 @@ export default function PdfUpload() {
             <input
               type="password"
               {...register('pdfPassword')}
-              className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
+              className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
               placeholder="Leave blank if not password protected"
             />
           </div>
@@ -213,7 +249,7 @@ export default function PdfUpload() {
               <input
                 type="number"
                 {...register('outstandingAmount', { valueAsNumber: true })}
-                className="mt-1 block w-full pl-10 pr-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
+                className="mt-1 block w-full pl-10 pr-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
                 placeholder="0.00"
               />
             </div>
@@ -334,7 +370,7 @@ export default function PdfUpload() {
         <button
           type="submit"
           disabled={isLoading || !file}
-          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:-translate-y-0.5"
+          className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:-translate-y-0.5"
         >
           {isLoading ? (
             <div className="flex items-center">
@@ -345,7 +381,12 @@ export default function PdfUpload() {
               Processing...
             </div>
           ) : (
-            'Process & Calculate'
+            <span className="inline-flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+              </svg>
+              Process & Calculate
+            </span>
           )}
         </button>
       </form>

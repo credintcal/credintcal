@@ -13,23 +13,26 @@ function classNames(...classes: string[]) {
 export default function Home() {
   return (
     <div className="space-y-12">
-      {/* Hero Section */}
-      <div className="relative isolate overflow-hidden pt-10 pb-16">
-        {/* Single, unified gradient background */}
+      {/* Hero Section - With rounded corners but original colors */}
+      <div className="relative isolate overflow-hidden pt-10 pb-16 bg-white rounded-xl shadow-sm">
+        {/* Background with original colors */}
         <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-gradient-to-b from-blue-50 via-indigo-50 to-white"></div>
-          <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-blue-100 to-transparent"></div>
-          <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-purple-100 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-50 via-indigo-50 to-white rounded-xl"></div>
+          
+          {/* Rounded blob elements for corners */}
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-200 rounded-full opacity-20 blur-3xl"></div>
+          <div className="absolute top-1/4 -right-24 w-64 h-64 bg-indigo-200 rounded-full opacity-20 blur-3xl"></div>
+          <div className="absolute -bottom-24 left-1/4 w-72 h-72 bg-purple-200 rounded-full opacity-20 blur-3xl"></div>
         </div>
         
         <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="relative">
-            {/* Decorative elements */}
-            <div className="absolute -top-10 -left-10 w-40 h-40 bg-gradient-to-br from-blue-400 to-indigo-400 rounded-full opacity-10 blur-3xl"></div>
-            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-10 blur-3xl"></div>
+            {/* Improved decorative elements with rounded corners */}
+            <div className="absolute -top-16 -left-16 w-60 h-60 bg-gradient-to-br from-blue-400 to-indigo-400 rounded-full opacity-10 blur-3xl"></div>
+            <div className="absolute -bottom-16 -right-16 w-60 h-60 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-10 blur-3xl"></div>
             
-            {/* Content box with consistent styling */}
-            <div className="backdrop-blur-sm bg-white/70 shadow-xl rounded-2xl p-8 sm:p-10 border border-gray-100">
+            {/* Content box with original colors but rounded corners */}
+            <div className="backdrop-blur-md bg-gradient-to-br from-white/80 via-white/70 to-indigo-50/60 shadow-xl rounded-2xl p-8 sm:p-10 border border-indigo-100">
               <div className="text-center">
                 <h1 className="text-4xl font-bold tracking-tight sm:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 mb-6">
                   Calculate Credit Card
@@ -79,6 +82,16 @@ export default function Home() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Credit Card Tips Section */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 shadow-sm border border-blue-100">
+        <h3 className="text-xl font-semibold text-blue-800 mb-4">Credit Card Tips</h3>
+        <p className="text-gray-700 mb-2">
+          <span className="inline-block mr-2">💡</span>
+          Always pay your full credit card bill before the due date to avoid interest charges and maintain a good credit score.
+        </p>
+        <p className="text-gray-600 text-sm italic">More tips coming soon</p>
       </div>
 
       {/* Calculator Tabs */}

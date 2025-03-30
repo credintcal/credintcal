@@ -15,6 +15,7 @@ const schema = z.object({
   minimumDueAmount: z.number().min(0, 'Minimum due amount must be positive'),
   minimumDuePaid: z.boolean(),
   transactionAmount: z.number().min(0, 'Transaction amount must be positive'),
+  interestRate: z.number().min(0, 'Interest rate must be positive'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -112,7 +113,7 @@ export default function ManualEntry() {
             <label className="block text-sm font-medium text-gray-700">Bank</label>
             <select
               {...register('bank')}
-              className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
+              className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
             >
               <option value="">Select a bank</option>
               {banks.map((bank) => (
@@ -126,48 +127,133 @@ export default function ManualEntry() {
             )}
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Outstanding Amount (₹)
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">₹</span>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="outstandingAmount" className="block text-sm font-medium text-gray-700">
+                Outstanding Amount (₹)
+              </label>
+              <div className="mt-1 relative rounded-xl shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">₹</span>
+                </div>
+                <input
+                  type="number"
+                  id="outstandingAmount"
+                  step="0.01"
+                  {...register('outstandingAmount', { valueAsNumber: true })}
+                  className="block w-full pl-8 pr-12 py-3 border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 shadow-sm hover:border-indigo-300"
+                  placeholder="0.00"
+                />
               </div>
-              <input
-                type="number"
-                {...register('outstandingAmount', { valueAsNumber: true })}
-                className="mt-1 block w-full pl-10 pr-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
-                placeholder="0.00"
-              />
+              {errors.outstandingAmount && (
+                <p className="mt-1 text-sm text-red-600">{errors.outstandingAmount.message}</p>
+              )}
             </div>
-            {errors.outstandingAmount && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.outstandingAmount.message}
-              </p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Transaction Amount (₹)
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">₹</span>
+            <div>
+              <label htmlFor="transactionAmount" className="block text-sm font-medium text-gray-700">
+                Transaction Amount (₹)
+              </label>
+              <div className="mt-1 relative rounded-xl shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">₹</span>
+                </div>
+                <input
+                  type="number"
+                  id="transactionAmount"
+                  step="0.01"
+                  {...register('transactionAmount', { valueAsNumber: true })}
+                  className="block w-full pl-8 pr-12 py-3 border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 shadow-sm hover:border-indigo-300"
+                  placeholder="0.00"
+                />
               </div>
-              <input
-                type="number"
-                {...register('transactionAmount', { valueAsNumber: true })}
-                className="mt-1 block w-full pl-10 pr-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
-                placeholder="0.00"
-              />
+              {errors.transactionAmount && (
+                <p className="mt-1 text-sm text-red-600">{errors.transactionAmount.message}</p>
+              )}
             </div>
-            {errors.transactionAmount && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.transactionAmount.message}
-              </p>
-            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="minimumDueAmount" className="block text-sm font-medium text-gray-700">
+                  Minimum Due Amount (₹)
+                </label>
+                <div className="mt-1 relative rounded-xl shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">₹</span>
+                  </div>
+                  <input
+                    type="number"
+                    id="minimumDueAmount"
+                    step="0.01"
+                    {...register('minimumDueAmount', { valueAsNumber: true })}
+                    className="block w-full pl-8 pr-12 py-3 border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 shadow-sm hover:border-indigo-300"
+                    placeholder="0.00"
+                  />
+                </div>
+                {errors.minimumDueAmount && (
+                  <p className="mt-1 text-sm text-red-600">{errors.minimumDueAmount.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="interestRate" className="block text-sm font-medium text-gray-700">
+                  Interest Rate (%)
+                </label>
+                <div className="mt-1 relative rounded-xl shadow-sm">
+                  <input
+                    type="number"
+                    id="interestRate"
+                    step="0.01"
+                    {...register('interestRate', { valueAsNumber: true })}
+                    className="block w-full pl-3 pr-12 py-3 border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 shadow-sm hover:border-indigo-300"
+                    placeholder="3.5"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">%</span>
+                  </div>
+                </div>
+                {errors.interestRate && (
+                  <p className="mt-1 text-sm text-red-600">{errors.interestRate.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 p-4 rounded-xl border border-indigo-100">
+              <fieldset>
+                <legend className="text-base font-medium text-indigo-700 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  Payment Status
+                </legend>
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center">
+                    <input
+                      id="minimumDuePaid-yes"
+                      type="radio"
+                      value="true"
+                      {...register('minimumDuePaid')}
+                      className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                    />
+                    <label htmlFor="minimumDuePaid-yes" className="ml-3 block text-sm font-medium text-gray-700">
+                      Minimum due amount paid
+                    </label>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      id="minimumDuePaid-no"
+                      type="radio"
+                      value="false"
+                      {...register('minimumDuePaid')}
+                      className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                    />
+                    <label htmlFor="minimumDuePaid-no" className="ml-3 block text-sm font-medium text-gray-700">
+                      Minimum due amount not paid
+                    </label>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -178,7 +264,7 @@ export default function ManualEntry() {
               <DatePicker
                 selected={transactionDate}
                 onChange={(date) => setTransactionDate(date)}
-                className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
+                className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
                 dateFormat="dd/MM/yyyy"
                 placeholderText="Select date"
               />
@@ -198,7 +284,7 @@ export default function ManualEntry() {
               <DatePicker
                 selected={dueDate}
                 onChange={(date) => setDueDate(date)}
-                className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
+                className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
                 dateFormat="dd/MM/yyyy"
                 placeholderText="Select date"
               />
@@ -218,7 +304,7 @@ export default function ManualEntry() {
               <DatePicker
                 selected={paymentDate}
                 onChange={(date) => setPaymentDate(date)}
-                className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
+                className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
                 dateFormat="dd/MM/yyyy"
                 placeholderText="Select date"
               />
@@ -229,42 +315,12 @@ export default function ManualEntry() {
               </div>
             </div>
           </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Minimum Due Amount (₹)
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">₹</span>
-              </div>
-              <input
-                type="number"
-                {...register('minimumDueAmount', { valueAsNumber: true })}
-                className="mt-1 block w-full pl-10 pr-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
-                placeholder="0.00"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center h-full pt-8">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                {...register('minimumDuePaid')}
-                className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 transition-colors"
-              />
-              <span className="ml-3 text-sm text-gray-700">
-                Minimum due amount paid by due date
-              </span>
-            </label>
-          </div>
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:-translate-y-0.5"
+          className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:-translate-y-0.5"
         >
           {isLoading ? (
             <div className="flex items-center">
@@ -275,7 +331,12 @@ export default function ManualEntry() {
               Processing...
             </div>
           ) : (
-            'Calculate'
+            <span className="inline-flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              Calculate
+            </span>
           )}
         </button>
       </form>
