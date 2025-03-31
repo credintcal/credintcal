@@ -34,6 +34,7 @@ export default function ManualEntry() {
     formState: { errors },
     reset,
     setValue,
+    watch,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -43,6 +44,20 @@ export default function ManualEntry() {
       minimumDuePaid: false
     }
   });
+
+  // Handle input focus to clear default value
+  const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    if (event.target.value === '0') {
+      event.target.value = '';
+    }
+  };
+
+  // Handle input blur to restore default value if empty
+  const handleBlur = (event: React.FocusEvent<HTMLInputElement>, fieldName: keyof FormData) => {
+    if (event.target.value === '') {
+      setValue(fieldName, 0);
+    }
+  };
 
   // Update form value when radio changes
   const handleMinDuePaidChange = (value: boolean) => {
@@ -197,9 +212,10 @@ export default function ManualEntry() {
                   type="number"
                   id="outstandingAmount"
                   step="0.01"
+                  onFocus={handleFocus}
+                  onBlur={(e) => handleBlur(e, 'outstandingAmount')}
                   {...register('outstandingAmount', { valueAsNumber: true })}
-                  className="block w-full pl-8 pr-12 py-3 border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 shadow-sm hover:border-indigo-300"
-                  placeholder="0.00"
+                  className="block w-full pl-7 pr-12 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
                 />
               </div>
               {errors.outstandingAmount && (
@@ -219,9 +235,10 @@ export default function ManualEntry() {
                   type="number"
                   id="transactionAmount"
                   step="0.01"
+                  onFocus={handleFocus}
+                  onBlur={(e) => handleBlur(e, 'transactionAmount')}
                   {...register('transactionAmount', { valueAsNumber: true })}
-                  className="block w-full pl-8 pr-12 py-3 border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 shadow-sm hover:border-indigo-300"
-                  placeholder="0.00"
+                  className="block w-full pl-7 pr-12 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
                 />
               </div>
               {errors.transactionAmount && (
@@ -229,28 +246,27 @@ export default function ManualEntry() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="minimumDueAmount" className="block text-sm font-medium text-gray-700">
-                  Minimum Due Amount (₹)
-                </label>
-                <div className="mt-1 relative rounded-xl shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">₹</span>
-                  </div>
-                  <input
-                    type="number"
-                    id="minimumDueAmount"
-                    step="0.01"
-                    {...register('minimumDueAmount', { valueAsNumber: true })}
-                    className="block w-full pl-8 pr-12 py-3 border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 shadow-sm hover:border-indigo-300"
-                    placeholder="0.00"
-                  />
+            <div>
+              <label htmlFor="minimumDueAmount" className="block text-sm font-medium text-gray-700">
+                Minimum Due Amount (₹)
+              </label>
+              <div className="mt-1 relative rounded-xl shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">₹</span>
                 </div>
-                {errors.minimumDueAmount && (
-                  <p className="mt-1 text-sm text-red-600">{errors.minimumDueAmount.message}</p>
-                )}
+                <input
+                  type="number"
+                  id="minimumDueAmount"
+                  step="0.01"
+                  onFocus={handleFocus}
+                  onBlur={(e) => handleBlur(e, 'minimumDueAmount')}
+                  {...register('minimumDueAmount', { valueAsNumber: true })}
+                  className="block w-full pl-7 pr-12 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
+                />
               </div>
+              {errors.minimumDueAmount && (
+                <p className="mt-1 text-sm text-red-600">{errors.minimumDueAmount.message}</p>
+              )}
             </div>
 
             <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 p-4 rounded-xl border border-indigo-100">
