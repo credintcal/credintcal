@@ -5,9 +5,14 @@ import mongoose, { Document, Model, Schema } from 'mongoose';
 const MONGODB_URI = process.env.MONGODB_URI || '';
 let conn: typeof mongoose | null = null;
 
-export interface ITransaction {
+// Interface for individual transactions
+export interface ITransactionDetail {
   amount: number;
   transactionDate: Date;
+}
+
+export interface ITransaction {
+  transactions: ITransactionDetail[];  // Array of transactions
   dueDate: Date;
   paymentDate: Date;
   bank: 'HDFC' | 'SBI' | 'ICICI' | 'Axis' | 'Kotak' | 'Yes' | 'PNB' | 'IDFC' | 'AmericanExpress' | 'Citibank';
@@ -24,15 +29,29 @@ export interface ITransaction {
 
 export interface ITransactionDocument extends ITransaction, Document {}
 
+// Schema for individual transaction
+const transactionDetailSchema = new Schema<ITransactionDetail>({
+  amount: {
+    type: Number,
+    required: true,
+  },
+  transactionDate: {
+    type: Date,
+    required: true,
+  },
+});
+
 const transactionSchema = new Schema<ITransactionDocument>(
   {
-    amount: {
-      type: Number,
+    transactions: {
+      type: [transactionDetailSchema],
       required: true,
-    },
-    transactionDate: {
-      type: Date,
-      required: true,
+      validate: {
+        validator: function(transactions: ITransactionDetail[]) {
+          return transactions.length > 0;
+        },
+        message: "At least one transaction is required"
+      }
     },
     dueDate: {
       type: Date,

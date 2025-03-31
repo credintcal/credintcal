@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { calculateDays, calculateInterest, getLateFee } from '../../../utils/calculations';
+import { calculateDays, calculateInterest, calculateMultipleInterest, getLateFee, calculateTotal } from '../../../utils/calculations';
 import mongodbConnection from '../../../config/mongodb';
 import Transaction from '../../../models/Transaction';
 
@@ -33,6 +33,7 @@ export async function POST(request: Request) {
         minimumDuePaid: transaction.minimumDuePaid,
         paymentStatus: transaction.paymentStatus,
         transactionId: transaction._id,
+        transactions: transaction.transactions
       });
     }
 
@@ -40,16 +41,20 @@ export async function POST(request: Request) {
     const {
       bank,
       outstandingAmount,
-      transactionAmount,
-      transactionDate,
+      transactions, // Array of transactions
       dueDate,
       paymentDate,
       minimumDueAmount,
       minimumDuePaid,
     } = data;
 
-    // Calculate days between transaction and payment dates
-    const days = calculateDays(new Date(transactionDate), new Date(paymentDate));
+    // Validate transactions
+    if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one transaction is required' },
+        { status: 400 }
+      );
+    }
 
     let interest = 0;
     let lateFee = 0;
@@ -63,8 +68,14 @@ export async function POST(request: Request) {
       interest = 0;
       lateFee = 0;
     } else {
-      // Payment made after due date
-      interest = calculateInterest(transactionAmount, days);
+      // Payment made after due date - calculate interest for each transaction
+      interest = calculateMultipleInterest(
+        transactions.map(t => ({
+          amount: t.amount,
+          transactionDate: new Date(t.transactionDate)
+        })),
+        paymentDateObj
+      );
       
       // Apply late fee only if minimum due wasn't paid
       if (!minimumDuePaid) {
@@ -72,12 +83,21 @@ export async function POST(request: Request) {
       }
     }
 
-    const totalAmount = interest + lateFee;
+    // Calculate total amount
+    const totalAmount = calculateTotal(
+      interest,
+      lateFee,
+      outstandingAmount,
+      minimumDueAmount,
+      minimumDuePaid
+    );
 
     // Create transaction record
     const transaction = new Transaction({
-      amount: transactionAmount,
-      transactionDate: new Date(transactionDate),
+      transactions: transactions.map(t => ({
+        amount: t.amount,
+        transactionDate: new Date(t.transactionDate)
+      })),
       dueDate: new Date(dueDate),
       paymentDate: new Date(paymentDate),
       bank,
@@ -101,6 +121,7 @@ export async function POST(request: Request) {
       minimumDuePaid: data.minimumDuePaid,
       paymentStatus: 'PENDING',
       transactionId: transaction._id,
+      transactions: transactions
     });
   } catch (error) {
     console.error('Calculation error:', error);

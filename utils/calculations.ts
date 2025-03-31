@@ -13,6 +13,20 @@ export const calculateInterest = (
   return (transactionAmount * 3.75 * days * 12) / (100 * 365);
 };
 
+// Calculate interest for multiple transactions
+export const calculateMultipleInterest = (
+  transactions: Array<{ amount: number; transactionDate: Date }>,
+  paymentDate: Date
+): number => {
+  if (!transactions || transactions.length === 0) return 0;
+  
+  return transactions.reduce((totalInterest, transaction) => {
+    const days = calculateDays(transaction.transactionDate, paymentDate);
+    const interest = calculateInterest(transaction.amount, days);
+    return totalInterest + interest;
+  }, 0);
+};
+
 export const getLateFee = (bank: string, outstandingAmount: number): number => {
   const amount = Number(outstandingAmount);
   
@@ -75,6 +89,23 @@ export const getLateFee = (bank: string, outstandingAmount: number): number => {
 
     default:
       return 0;
+  }
+};
+
+// Calculate the total based on minimum due payment status
+export const calculateTotal = (
+  interest: number,
+  lateFee: number,
+  outstandingAmount: number,
+  minimumDueAmount: number,
+  minimumDuePaid: boolean
+): number => {
+  if (minimumDuePaid) {
+    // If minimum due is paid, subtract it from outstanding amount and add interest
+    return (outstandingAmount - minimumDueAmount) + interest;
+  } else {
+    // If minimum due is not paid, add late fee
+    return outstandingAmount + interest + lateFee;
   }
 };
 
