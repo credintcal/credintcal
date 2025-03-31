@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
@@ -10,7 +10,7 @@ import { initializeRazorpayPayment } from '../../utils/payment';
 import CalculationResult from './CalculationResult';
 import { event } from './GoogleAnalytics';
 import TransactionItem from './TransactionItem';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 
 // Transaction interface
 interface Transaction {
@@ -34,6 +34,7 @@ export default function ManualEntry() {
   const [isLoading, setIsLoading] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [minDuePaid, setMinDuePaid] = useState(false);
+  const [transactionError, setTransactionError] = useState<string | null>(null);
   
   // State for multiple transactions
   const [transactions, setTransactions] = useState<Transaction[]>([
@@ -47,6 +48,7 @@ export default function ManualEntry() {
     reset,
     setValue,
     watch,
+    getValues,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -55,6 +57,14 @@ export default function ManualEntry() {
       minimumDuePaid: false
     }
   });
+
+  // Watch the outstanding amount to validate transaction totals
+  const outstandingAmount = watch('outstandingAmount');
+
+  // Effect to validate transaction amounts whenever they change
+  useEffect(() => {
+    validateTransactionAmounts();
+  }, [transactions, outstandingAmount]);
 
   // Handle input focus to clear default value
   const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
@@ -78,11 +88,19 @@ export default function ManualEntry() {
 
   // Add a new transaction
   const addTransaction = () => {
+    if (isPaid || calculationResult?.paymentStatus === 'COMPLETED') {
+      alert('Cannot add transactions after payment. Please reset the form to start a new calculation.');
+      return;
+    }
     setTransactions([...transactions, { amount: 0, transactionDate: null }]);
   };
 
   // Remove a transaction
   const removeTransaction = (index: number) => {
+    if (isPaid || calculationResult?.paymentStatus === 'COMPLETED') {
+      alert('Cannot remove transactions after payment. Please reset the form to start a new calculation.');
+      return;
+    }
     if (transactions.length > 1) {
       const updatedTransactions = [...transactions];
       updatedTransactions.splice(index, 1);
@@ -92,21 +110,62 @@ export default function ManualEntry() {
 
   // Update transaction amount
   const updateTransactionAmount = (index: number, amount: number) => {
+    if (isPaid || calculationResult?.paymentStatus === 'COMPLETED') {
+      alert('Cannot modify transactions after payment. Please reset the form to start a new calculation.');
+      return;
+    }
     const updatedTransactions = [...transactions];
     updatedTransactions[index].amount = amount;
     setTransactions(updatedTransactions);
+    validateTransactionAmounts();
   };
 
   // Update transaction date
   const updateTransactionDate = (index: number, date: Date | null) => {
+    if (isPaid || calculationResult?.paymentStatus === 'COMPLETED') {
+      alert('Cannot modify transactions after payment. Please reset the form to start a new calculation.');
+      return;
+    }
     const updatedTransactions = [...transactions];
     updatedTransactions[index].transactionDate = date;
     setTransactions(updatedTransactions);
   };
 
+  // Validate transaction amounts don't exceed outstanding amount
+  const validateTransactionAmounts = (): boolean => {
+    const totalTransactionAmount = transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+    const currentOutstandingAmount = getValues('outstandingAmount');
+    
+    if (totalTransactionAmount > currentOutstandingAmount) {
+      setTransactionError(`Total transaction amount (₹${totalTransactionAmount.toFixed(2)}) exceeds outstanding amount (₹${currentOutstandingAmount.toFixed(2)})`);
+      return false;
+    } else {
+      setTransactionError(null);
+      return true;
+    }
+  };
+
   // Validate all transaction dates are selected
   const validateTransactionDates = (): boolean => {
     return transactions.every(transaction => transaction.transactionDate !== null);
+  };
+
+  // Reset the form to start a new calculation
+  const handleReset = () => {
+    reset({
+      bank: '',
+      outstandingAmount: 0,
+      minimumDueAmount: 0,
+      minimumDuePaid: false
+    });
+    setDueDate(null);
+    setPaymentDate(null);
+    setCalculationResult(null);
+    setIsLoading(false);
+    setIsPaid(false);
+    setMinDuePaid(false);
+    setTransactionError(null);
+    setTransactions([{ amount: 0, transactionDate: null }]);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -119,6 +178,18 @@ export default function ManualEntry() {
     // Validate transaction dates
     if (!validateTransactionDates()) {
       alert('Please select all transaction dates');
+      return;
+    }
+
+    // Validate transaction amounts
+    if (!validateTransactionAmounts()) {
+      alert('Total transaction amount cannot exceed outstanding amount');
+      return;
+    }
+
+    // Check if already paid
+    if (isPaid || calculationResult?.paymentStatus === 'COMPLETED') {
+      alert('Payment already completed. Please reset the form to start a new calculation.');
       return;
     }
 
@@ -268,6 +339,7 @@ export default function ManualEntry() {
             <select
               {...register('bank')}
               className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
+              disabled={isPaid || calculationResult?.paymentStatus === 'COMPLETED'}
             >
               <option value="">Select a bank</option>
               {banks.map((bank) => (
@@ -298,6 +370,7 @@ export default function ManualEntry() {
                   onBlur={(e) => handleBlur(e, 'outstandingAmount')}
                   {...register('outstandingAmount', { valueAsNumber: true })}
                   className="block w-full pl-7 pr-12 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
+                  disabled={isPaid || calculationResult?.paymentStatus === 'COMPLETED'}
                 />
               </div>
               {errors.outstandingAmount && (
@@ -321,6 +394,7 @@ export default function ManualEntry() {
                   onBlur={(e) => handleBlur(e, 'minimumDueAmount')}
                   {...register('minimumDueAmount', { valueAsNumber: true })}
                   className="block w-full pl-7 pr-12 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
+                  disabled={isPaid || calculationResult?.paymentStatus === 'COMPLETED'}
                 />
               </div>
               {errors.minimumDueAmount && (
@@ -344,6 +418,7 @@ export default function ManualEntry() {
                   className="block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
                   placeholderText="Select due date"
                   dateFormat="MMMM d, yyyy"
+                  disabled={isPaid || calculationResult?.paymentStatus === 'COMPLETED'}
                 />
               </div>
             </div>
@@ -359,22 +434,25 @@ export default function ManualEntry() {
                   className="block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
                   placeholderText="Select payment date"
                   dateFormat="MMMM d, yyyy"
+                  disabled={isPaid || calculationResult?.paymentStatus === 'COMPLETED'}
                 />
               </div>
             </div>
           </div>
 
-          <fieldset className="mt-4">
-            <legend className="block text-sm font-medium text-gray-700">Minimum Due Payment Status</legend>
+          {/* Enhanced Minimum Due Payment Status */}
+          <fieldset className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+            <legend className="px-2 text-sm font-medium text-blue-700 bg-white rounded-md shadow-sm border border-blue-200">Minimum Due Payment Status</legend>
             <div className="mt-2 grid grid-cols-2 gap-4">
               <div className="flex items-center">
                 <input
                   id="minimum-due-yes"
                   name="minimum-due-paid"
                   type="radio"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                   checked={minDuePaid === true}
                   onChange={() => handleMinDuePaidChange(true)}
+                  disabled={isPaid || calculationResult?.paymentStatus === 'COMPLETED'}
                 />
                 <label htmlFor="minimum-due-yes" className="ml-3 block text-sm font-medium text-gray-700">
                   Minimum Due Paid
@@ -385,9 +463,10 @@ export default function ManualEntry() {
                   id="minimum-due-no"
                   name="minimum-due-paid"
                   type="radio"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  className="h-5 w-5 text-red-600 focus:ring-red-500 border-gray-300"
                   checked={minDuePaid === false}
                   onChange={() => handleMinDuePaidChange(false)}
+                  disabled={isPaid || calculationResult?.paymentStatus === 'COMPLETED'}
                 />
                 <label htmlFor="minimum-due-no" className="ml-3 block text-sm font-medium text-gray-700">
                   Minimum Due Not Paid
@@ -400,14 +479,6 @@ export default function ManualEntry() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900">Transactions</h3>
-            <button
-              type="button"
-              onClick={addTransaction}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <PlusIcon className="h-4 w-4 mr-1" />
-              Add Transaction
-            </button>
           </div>
           
           <div className="space-y-2">
@@ -424,13 +495,31 @@ export default function ManualEntry() {
               />
             ))}
           </div>
+
+          {transactionError && (
+            <div className="p-3 bg-red-50 text-red-700 rounded-lg border border-red-200">
+              <p className="text-sm font-medium">{transactionError}</p>
+            </div>
+          )}
         </div>
 
-        <div className="pt-4">
+        <div className="flex flex-col space-y-4">
+          {/* Add Transaction Button moved here */}
+          <button
+            type="button"
+            onClick={addTransaction}
+            className="flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            disabled={isPaid || calculationResult?.paymentStatus === 'COMPLETED'}
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Add Transaction
+          </button>
+
+          {/* Calculate Button */}
           <button
             type="submit"
-            disabled={isLoading}
-            className="w-full flex justify-center items-center py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white rounded-xl shadow-lg transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            disabled={isLoading || isPaid || calculationResult?.paymentStatus === 'COMPLETED' || Boolean(transactionError)}
+            className="w-full flex justify-center items-center py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white rounded-xl shadow-lg transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
           >
             {isLoading ? (
               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -445,6 +534,16 @@ export default function ManualEntry() {
                 Calculate
               </>
             )}
+          </button>
+
+          {/* Reset Button */}
+          <button
+            type="button"
+            onClick={handleReset}
+            className="flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <ArrowPathIcon className="h-5 w-5 mr-2" />
+            Reset Form
           </button>
         </div>
       </form>
