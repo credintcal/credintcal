@@ -147,13 +147,6 @@ export default function CalculationResult({
                 </p>
               </div>
             </div>
-            <div className="mt-4 space-y-2 text-sm text-gray-600">
-              <p>Outstanding Amount: ₹{result.outstandingAmount.toFixed(2)}</p>
-              {result.minimumDueAmount && (
-                <p>Minimum Due Amount: ₹{result.minimumDueAmount.toFixed(2)}</p>
-              )}
-              <p>Status: {result.minimumDuePaid ? 'Minimum Due Paid' : 'Minimum Due Not Paid'}</p>
-            </div>
           </div>
         )}
       </div>
