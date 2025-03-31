@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { initializeRazorpayPayment } from '../../utils/payment';
 import CalculationResult from './CalculationResult';
+import { event } from './GoogleAnalytics';
 
 const schema = z.object({
   bank: z.string().min(1, 'Bank is required'),
@@ -71,6 +72,14 @@ export default function ManualEntry() {
       return;
     }
 
+    // Track form submission event
+    event({
+      action: 'submit',
+      category: 'form',
+      label: 'calculator_form',
+      value: data.outstandingAmount
+    });
+
     setIsLoading(true);
     try {
       console.log("Submitting data:", {
@@ -102,15 +111,39 @@ export default function ManualEntry() {
       const result = await response.json();
       console.log("Calculation result:", result);
       setCalculationResult(result);
+      
+      // Track successful calculation
+      event({
+        action: 'calculate',
+        category: 'success',
+        label: data.bank,
+        value: result.totalAmount
+      });
     } catch (error) {
       console.error('Calculation failed:', error);
       alert('Failed to calculate fees. Please try again.');
+      
+      // Track calculation error
+      event({
+        action: 'calculate',
+        category: 'error',
+        label: 'calculation_error',
+        value: 0
+      });
     }
     setIsLoading(false);
   };
 
   const handlePayment = async () => {
     if (calculationResult?.transactionId) {
+      // Track payment initiation
+      event({
+        action: 'initiate',
+        category: 'payment',
+        label: 'razorpay',
+        value: calculationResult.totalAmount
+      });
+      
       try {
         const success = await initializeRazorpayPayment(calculationResult.transactionId);
         if (success) {

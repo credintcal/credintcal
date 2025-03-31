@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { CalculatorIcon } from '@heroicons/react/24/outline'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import FinancialTip from './components/FinancialTip'
+import GoogleAnalytics from './components/GoogleAnalytics'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -29,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className={`${inter.className} h-full`}>
+        <GoogleAnalytics />
         <div className="min-h-full flex flex-col">
           {/* Header */}
           <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800">
