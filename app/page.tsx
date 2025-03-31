@@ -13,66 +13,35 @@ function classNames(...classes: string[]) {
 export default function Home() {
   return (
     <div className="space-y-12">
-      {/* Hero Section - Redesigned to look more professional and less like an ad */}
-      <div className="relative isolate overflow-hidden pt-14 pb-20 bg-white rounded-xl shadow-md">
-        
-        {/* Background with softer gradients */}
+      {/* Hero Section - With rounded corners but original colors */}
+      <div className="relative isolate overflow-hidden pt-10 pb-16 bg-white rounded-xl shadow-sm">
+        {/* Background with original colors */}
         <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-gradient-to-br from-white via-blue-50 to-indigo-50 rounded-xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-50 via-indigo-50 to-white rounded-xl"></div>
           
-          {/* More subtle blob elements */}
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-100 rounded-full opacity-30 blur-3xl"></div>
-          <div className="absolute top-1/4 -right-24 w-64 h-64 bg-indigo-100 rounded-full opacity-30 blur-3xl"></div>
-          <div className="absolute -bottom-24 left-1/4 w-72 h-72 bg-purple-100 rounded-full opacity-30 blur-3xl"></div>
+          {/* Rounded blob elements for corners */}
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-200 rounded-full opacity-20 blur-3xl"></div>
+          <div className="absolute top-1/4 -right-24 w-64 h-64 bg-indigo-200 rounded-full opacity-20 blur-3xl"></div>
+          <div className="absolute -bottom-24 left-1/4 w-72 h-72 bg-purple-200 rounded-full opacity-20 blur-3xl"></div>
         </div>
-
-        <div className="container mx-auto max-w-4xl px-6 sm:px-8 lg:px-10">
-          {/* Content container with improved spacing and layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Text content - aligned left for more professional appearance */}
-            <div className="lg:col-span-7 space-y-6">
-              <div className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-blue-50 text-blue-700 mb-2">
-                <SparklesIcon className="h-4 w-4 mr-1.5" />
-                <span>Credit Card Calculator</span>
-              </div>
-              
-              <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-                Calculate Credit Card Interest & Late Fees
-              </h1>
-              
-              <p className="text-lg text-gray-600 leading-relaxed max-w-2xl">
-                Get accurate calculations for your credit card charges. Upload your statement or enter details manually to see exactly what you owe.
-              </p>
-              
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <svg viewBox="0 0 24 24" className="h-5 w-5 text-green-500" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Safe & secure</span>
-                
-                <span className="mx-2">•</span>
-                
-                <svg viewBox="0 0 24 24" className="h-5 w-5 text-green-500" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>100% accurate</span>
-                
-                <span className="mx-2">•</span>
-                
-                <svg viewBox="0 0 24 24" className="h-5 w-5 text-green-500" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Free to use</span>
-              </div>
-            </div>
+        
+        <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="relative">
+            {/* Improved decorative elements with rounded corners */}
+            <div className="absolute -top-16 -left-16 w-60 h-60 bg-gradient-to-br from-blue-400 to-indigo-400 rounded-full opacity-10 blur-3xl"></div>
+            <div className="absolute -bottom-16 -right-16 w-60 h-60 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-10 blur-3xl"></div>
             
-            {/* Visual element - aligned right */}
-            <div className="lg:col-span-5 flex justify-center lg:justify-end">
-              <div className="relative h-64 w-64">
-                <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-indigo-600 rounded-xl opacity-10 blur-md"></div>
-                <div className="relative h-full w-full flex items-center justify-center">
-                  <CalculatorIcon className="h-32 w-32 text-indigo-600/70" />
-                </div>
+            {/* Content box with original colors but rounded corners */}
+            <div className="backdrop-blur-md bg-gradient-to-br from-white/80 via-white/70 to-indigo-50/60 shadow-xl rounded-2xl p-8 sm:p-10 border border-indigo-100">
+              <div className="text-center">
+                <h1 className="text-4xl font-bold tracking-tight sm:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 mb-6">
+                  Calculate Credit Card
+                  <br />
+                  Interest & Late Fees
+                </h1>
+                <p className="text-lg leading-8 text-gray-700 max-w-2xl mx-auto">
+                  Get accurate calculations for your credit card charges. Upload your statement or enter details manually.
+                </p>
               </div>
             </div>
           </div>
@@ -116,8 +85,9 @@ export default function Home() {
       </div>
 
       {/* Calculator Tabs */}
-      <div className="container mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8">
-        <div>
+      <div className="relative">
+        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-20"></div>
+        <div className="relative bg-white rounded-2xl shadow-sm p-4">
           <Tab.Group>
             <Tab.List className="flex space-x-2 rounded-xl bg-gray-100 p-1.5">
               <Tab
