@@ -5,6 +5,7 @@ import './globals.css'
 import Link from 'next/link'
 import { CalculatorIcon } from '@heroicons/react/24/outline'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
+import { UserIcon } from '@heroicons/react/24/outline'
 import FinancialTip from './components/FinancialTip'
 import GoogleAnalytics from './components/GoogleAnalytics'
 import Providers from './providers'
@@ -54,9 +55,28 @@ export default function RootLayout({
                     </div>
                   </Link>
                   
-                  {/* Financial Tip in Header */}
-                  <div className="hidden md:block max-w-md">
-                    <FinancialTip />
+                  <div className="flex items-center space-x-4">
+                    {/* Auth Links */}
+                    <div className="flex items-center space-x-2">
+                      <Link 
+                        href="/auth/login" 
+                        className="text-white hover:text-blue-200 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                      >
+                        <UserIcon className="h-5 w-5 mr-1" />
+                        Login
+                      </Link>
+                      <Link 
+                        href="/auth/register" 
+                        className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                      >
+                        Register
+                      </Link>
+                    </div>
+                    
+                    {/* Financial Tip in Header */}
+                    <div className="hidden md:block max-w-md">
+                      <FinancialTip />
+                    </div>
                   </div>
                 </div>
                 
