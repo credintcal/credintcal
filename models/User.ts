@@ -1,4 +1,5 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
+import crypto from 'crypto';
 
 export interface IUser {
   email: string;
@@ -9,9 +10,16 @@ export interface IUser {
   lastLogin: Date;
   transactions: mongoose.Types.ObjectId[];
   discountEligible: boolean;
+  verificationToken: string;
+  verificationTokenExpiry: Date;
+  resetPasswordToken: string;
+  resetPasswordTokenExpiry: Date;
 }
 
-export interface IUserDocument extends IUser, Document {}
+export interface IUserDocument extends IUser, Document {
+  generateVerificationToken: () => { token: string, expiresAt: Date };
+  generatePasswordResetToken: () => { token: string, expiresAt: Date };
+}
 
 const userSchema = new Schema<IUserDocument>(
   {
@@ -50,7 +58,11 @@ const userSchema = new Schema<IUserDocument>(
     discountEligible: {
       type: Boolean,
       default: false,
-    }
+    },
+    verificationToken: String,
+    verificationTokenExpiry: Date,
+    resetPasswordToken: String,
+    resetPasswordTokenExpiry: Date
   },
   {
     timestamps: true,
@@ -65,9 +77,35 @@ userSchema.path('email').validate(async function(email: string) {
   return !emailCount;
 }, 'Email already exists');
 
+// Method to generate verification token
+userSchema.methods.generateVerificationToken = function() {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date();
+  expiresAt.setHours(expiresAt.getHours() + 24); // Token expires in 24 hours
+  
+  this.verificationToken = token;
+  this.verificationTokenExpiry = expiresAt;
+  
+  return { token, expiresAt };
+};
+
+// Method to generate password reset token
+userSchema.methods.generatePasswordResetToken = function() {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date();
+  expiresAt.setHours(expiresAt.getHours() + 1); // Token expires in 1 hour
+  
+  this.resetPasswordToken = token;
+  this.resetPasswordTokenExpiry = expiresAt;
+  
+  return { token, expiresAt };
+};
+
 // Create indexes
 userSchema.index({ email: 1 });
 userSchema.index({ registrationDate: 1 });
+userSchema.index({ verificationToken: 1 });
+userSchema.index({ resetPasswordToken: 1 });
 
 const User = (mongoose.models.User as Model<IUserDocument>) || 
             mongoose.model<IUserDocument>('User', userSchema);

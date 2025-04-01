@@ -24,10 +24,19 @@ const handler = NextAuth({
           throw new Error('No user found with this email');
         }
 
+        // Check if user is verified
+        if (!user.isVerified) {
+          throw new Error('Email not verified. Please check your inbox for the verification email.');
+        }
+
         const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) {
           throw new Error('Invalid password');
         }
+
+        // Update last login time
+        user.lastLogin = new Date();
+        await user.save();
 
         return {
           id: user._id.toString(),
@@ -42,6 +51,7 @@ const handler = NextAuth({
   },
   pages: {
     signIn: '/auth/login',
+    error: '/auth/login',
   },
   callbacks: {
     async jwt({ token, user }) {

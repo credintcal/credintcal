@@ -1,15 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const verified = searchParams.get('verified');
+  const registered = searchParams.get('registered');
+  
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (verified === 'true') {
+      setSuccess('Email verified successfully! You can now log in.');
+    } else if (registered === 'true') {
+      setSuccess('Registration successful! Please check your email to verify your account before logging in.');
+    }
+  }, [verified, registered]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
@@ -24,7 +38,11 @@ export default function LoginForm() {
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
+        if (result.error.includes('not verified')) {
+          setError('Email not verified. Please check your inbox for verification email.');
+        } else {
+          setError('Invalid email or password');
+        }
       } else {
         router.push('/dashboard'); // Redirect to dashboard after login
         router.refresh();
@@ -43,6 +61,11 @@ export default function LoginForm() {
         {error && (
           <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm">
             {error}
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-50 text-green-500 p-3 rounded-md text-sm">
+            {success}
           </div>
         )}
         <div>
@@ -68,6 +91,15 @@ export default function LoginForm() {
             required
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
+        </div>
+        <div className="text-right">
+          <button
+            type="button"
+            onClick={() => router.push('/auth/forgot-password')}
+            className="text-sm font-medium text-blue-600 hover:text-blue-500"
+          >
+            Forgot password?
+          </button>
         </div>
         <button
           type="submit"

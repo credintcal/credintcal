@@ -3,6 +3,7 @@ import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import { connectToDatabase } from '@/config/mongodb';
+import { sendVerificationEmail } from '@/utils/email';
 
 export async function POST(request: Request) {
   try {
@@ -41,12 +42,22 @@ export async function POST(request: Request) {
       lastLogin: new Date(),
     });
 
+    // Generate verification token
+    const { token } = user.generateVerificationToken();
+    
     await user.save();
+
+    // Send verification email
+    await sendVerificationEmail(email, name, token);
 
     // Return success without password
     const { password: _, ...userWithoutPassword } = user.toObject();
     return NextResponse.json(
-      { message: 'Registration successful', user: userWithoutPassword },
+      { 
+        message: 'Registration successful', 
+        user: userWithoutPassword,
+        verificationSent: true
+      },
       { status: 201 }
     );
 
