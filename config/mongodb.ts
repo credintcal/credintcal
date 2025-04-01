@@ -13,18 +13,20 @@ const options = {
   socketTimeoutMS: 45000,
 };
 
-let connection: typeof mongoose.connection;
+export async function connectToDatabase() {
+  if (mongoose.connection.readyState >= 1) {
+    console.log('MongoDB is already connected');
+    return mongoose.connection;
+  }
 
-if (mongoose.connection.readyState >= 1) {
-  console.log('MongoDB is already connected');
-  connection = mongoose.connection;
-} else {
-  mongoose
-    .connect(MONGODB_URI, options)
-    .then(() => console.log('Connected to MongoDB'))
-    .catch((error) => console.error('MongoDB connection error:', error));
-  
-  connection = mongoose.connection;
+  try {
+    await mongoose.connect(MONGODB_URI, options);
+    console.log('Connected to MongoDB');
+    return mongoose.connection;
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw error;
+  }
 }
 
-export default connection; 
+export default mongoose.connection; 
