@@ -1,5 +1,12 @@
 {
-  "buildCommand": "npm run vercel-build",
-  "installCommand": "npm install",
-  "framework": "nextjs"
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next",
+      "config": {
+        "buildCommand": "chmod +x vercel-build.sh && ./vercel-build.sh"
+      }
+    }
+  ]
 } 

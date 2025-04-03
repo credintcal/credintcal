@@ -17,7 +17,7 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     if (!token) {
-      setError('Missing reset token. Please use the link from the email.');
+      setError('Invalid reset link. Please request a new password reset.');
     }
   }, [token]);
 
@@ -26,20 +26,14 @@ export default function ResetPasswordPage() {
     setError('');
     setLoading(true);
 
-    if (!token) {
-      setError('Missing reset token');
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters long');
-      setLoading(false);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
       setLoading(false);
       return;
     }
@@ -52,18 +46,45 @@ export default function ResetPasswordPage() {
       });
 
       const data = await response.json();
-      
-      if (response.ok) {
-        setSuccess(true);
-      } else {
-        setError(data.error || 'Failed to reset password');
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to reset password');
       }
+
+      setSuccess(true);
+      // Redirect to login page after 3 seconds
+      setTimeout(() => {
+        router.push('/auth/login?reset=true');
+      }, 3000);
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to reset password');
     } finally {
       setLoading(false);
     }
   };
+
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Invalid Reset Link
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            This password reset link is invalid or has expired.
+          </p>
+          <div className="mt-6">
+            <Link
+              href="/auth/forgot-password"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Request New Reset Link
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -82,18 +103,10 @@ export default function ResetPasswordPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900">Password reset successful</h3>
+              <h3 className="text-lg font-medium text-gray-900">Password Reset Successful</h3>
               <p className="mt-2 text-sm text-gray-500">
-                Your password has been reset successfully.
+                Your password has been reset. Redirecting to login page...
               </p>
-              <div className="mt-6">
-                <Link
-                  href="/auth/login"
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Return to login
-                </Link>
-              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -102,7 +115,6 @@ export default function ResetPasswordPage() {
                   {error}
                 </div>
               )}
-              
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                   New Password
@@ -142,7 +154,7 @@ export default function ResetPasswordPage() {
               <div>
                 <button
                   type="submit"
-                  disabled={loading || !token}
+                  disabled={loading}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
                   {loading ? 'Resetting...' : 'Reset Password'}

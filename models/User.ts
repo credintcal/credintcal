@@ -14,11 +14,22 @@ export interface IUser {
   verificationTokenExpiry: Date;
   resetPasswordToken: string;
   resetPasswordTokenExpiry: Date;
+  calculationHistory: {
+    date: Date;
+    bank: string;
+    amount: number;
+    interest: number;
+    lateFee: number;
+    total: number;
+  }[];
+  lastPaymentDate: Date;
+  paymentCount: number;
 }
 
 export interface IUserDocument extends IUser, Document {
-  generateVerificationToken: () => { token: string, expiresAt: Date };
-  generatePasswordResetToken: () => { token: string, expiresAt: Date };
+  generateVerificationToken(): { token: string; expiresAt: Date };
+  generatePasswordResetToken(): { token: string; expiresAt: Date };
+  checkDiscountEligibility(): boolean;
 }
 
 const userSchema = new Schema<IUserDocument>(
@@ -62,7 +73,23 @@ const userSchema = new Schema<IUserDocument>(
     verificationToken: String,
     verificationTokenExpiry: Date,
     resetPasswordToken: String,
-    resetPasswordTokenExpiry: Date
+    resetPasswordTokenExpiry: Date,
+    calculationHistory: [{
+      date: {
+        type: Date,
+        default: Date.now,
+      },
+      bank: String,
+      amount: Number,
+      interest: Number,
+      lateFee: Number,
+      total: Number,
+    }],
+    lastPaymentDate: Date,
+    paymentCount: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
@@ -99,6 +126,20 @@ userSchema.methods.generatePasswordResetToken = function() {
   this.resetPasswordTokenExpiry = expiresAt;
   
   return { token, expiresAt };
+};
+
+// Method to check discount eligibility
+userSchema.methods.checkDiscountEligibility = function() {
+  if (!this.lastPaymentDate) return false;
+  
+  const now = new Date();
+  const monthsSinceLastPayment = (now.getFullYear() - this.lastPaymentDate.getFullYear()) * 12 +
+    (now.getMonth() - this.lastPaymentDate.getMonth());
+  
+  // Eligible for discount if:
+  // 1. Made at least 3 payments
+  // 2. Last payment was within last 6 months
+  return this.paymentCount >= 3 && monthsSinceLastPayment <= 6;
 };
 
 // Create indexes

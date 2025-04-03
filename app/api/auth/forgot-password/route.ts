@@ -7,6 +7,7 @@ export async function POST(request: Request) {
   try {
     const { email } = await request.json();
 
+    // Validate input
     if (!email) {
       return NextResponse.json(
         { error: 'Email is required' },
@@ -17,13 +18,12 @@ export async function POST(request: Request) {
     // Connect to database
     await connectToDatabase();
 
-    // Find user by email
+    // Find user
     const user = await User.findOne({ email });
-    
-    // If no user found, still return success to prevent email enumeration
     if (!user) {
+      // Return success even if user not found to prevent email enumeration
       return NextResponse.json(
-        { message: 'If an account with that email exists, we have sent a password reset link' },
+        { message: 'If an account exists with this email, a password reset link will be sent.' },
         { status: 200 }
       );
     }
@@ -36,14 +36,14 @@ export async function POST(request: Request) {
     await sendPasswordResetEmail(email, user.name, token);
 
     return NextResponse.json(
-      { message: 'If an account with that email exists, we have sent a password reset link' },
+      { message: 'If an account exists with this email, a password reset link will be sent.' },
       { status: 200 }
     );
 
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error('Password reset request error:', error);
     return NextResponse.json(
-      { error: 'Failed to process request' },
+      { error: 'Failed to process password reset request' },
       { status: 500 }
     );
   }

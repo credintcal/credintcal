@@ -7,6 +7,7 @@ export async function POST(request: Request) {
   try {
     const { token, password } = await request.json();
 
+    // Validate input
     if (!token || !password) {
       return NextResponse.json(
         { error: 'Token and password are required' },
@@ -14,17 +15,10 @@ export async function POST(request: Request) {
       );
     }
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: 'Password must be at least 6 characters long' },
-        { status: 400 }
-      );
-    }
-
     // Connect to database
     await connectToDatabase();
 
-    // Find user with this reset token that hasn't expired
+    // Find user with valid reset token
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordTokenExpiry: { $gt: new Date() }
@@ -41,7 +35,7 @@ export async function POST(request: Request) {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Update user password and clear token
+    // Update password and clear reset token
     user.password = hashedPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordTokenExpiry = undefined;
@@ -53,7 +47,7 @@ export async function POST(request: Request) {
     );
 
   } catch (error) {
-    console.error('Reset password error:', error);
+    console.error('Password reset error:', error);
     return NextResponse.json(
       { error: 'Failed to reset password' },
       { status: 500 }
