@@ -30,6 +30,11 @@ export async function initializeRazorpayPayment(amount: number) {
     const isEligibleForDiscount = user.checkDiscountEligibility();
     const finalAmount = isEligibleForDiscount ? amount * 0.9 : amount; // 10% discount for eligible users
 
+    console.log('Initializing Razorpay payment for amount:', finalAmount);
+
+    // Log environment variables to check if they're being loaded
+    console.log('Razorpay Key ID:', process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ? 'Exists' : 'Missing');
+
     // Load Razorpay script
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
@@ -40,17 +45,33 @@ export async function initializeRazorpayPayment(amount: number) {
       script.onload = async () => {
         try {
           // Create order
+          console.log('Creating Razorpay order');
           const response = await fetch('/api/payments/create-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ amount: finalAmount }),
           });
 
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Error creating order:', errorData);
+            throw new Error(`Failed to create order: ${errorData.error}`);
+          }
+
           const { orderId } = await response.json();
+          console.log('Order created successfully:', orderId);
+
+          // Get key from window if available, fallback to env variable
+          const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+          console.log('Using Razorpay Key:', razorpayKeyId ? 'Key exists' : 'Key missing');
+
+          if (!razorpayKeyId) {
+            throw new Error('Razorpay key is missing. Please check your environment configuration.');
+          }
 
           // Initialize Razorpay
           const options = {
-            key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+            key: razorpayKeyId,
             amount: finalAmount * 100, // Razorpay expects amount in paise
             currency: 'INR',
             name: 'Credit Card Fee Calculator',
@@ -58,6 +79,7 @@ export async function initializeRazorpayPayment(amount: number) {
             order_id: orderId,
             handler: async (response: any) => {
               try {
+                console.log('Payment successful, verifying payment');
                 // Verify payment
                 const verificationResponse = await fetch('/api/payments/verify', {
                   method: 'POST',
@@ -66,6 +88,7 @@ export async function initializeRazorpayPayment(amount: number) {
                 });
 
                 if (verificationResponse.ok) {
+                  console.log('Payment verified successfully');
                   // Update user's payment history
                   user.lastPaymentDate = new Date();
                   user.paymentCount += 1;
@@ -74,9 +97,12 @@ export async function initializeRazorpayPayment(amount: number) {
 
                   resolve(response);
                 } else {
-                  reject(new Error('Payment verification failed'));
+                  const errorData = await verificationResponse.json();
+                  console.error('Payment verification failed:', errorData);
+                  reject(new Error(`Payment verification failed: ${errorData.error}`));
                 }
               } catch (error) {
+                console.error('Error in payment handler:', error);
                 reject(error);
               }
             },
@@ -89,14 +115,17 @@ export async function initializeRazorpayPayment(amount: number) {
             },
           };
 
+          console.log('Opening Razorpay payment form');
           const razorpay = new (window as any).Razorpay(options);
           razorpay.open();
         } catch (error) {
+          console.error('Error in Razorpay initialization:', error);
           reject(error);
         }
       };
 
       script.onerror = () => {
+        console.error('Failed to load Razorpay script');
         reject(new Error('Failed to load Razorpay script'));
       };
     });
