@@ -1,5 +1,5 @@
 import React from 'react';
-import { CurrencyRupeeIcon, LockClosedIcon, LockOpenIcon } from '@heroicons/react/24/outline';
+import { CurrencyRupeeIcon, LockOpenIcon } from '@heroicons/react/24/outline';
 
 interface CalculationResultProps {
   result: {
@@ -14,15 +14,10 @@ interface CalculationResultProps {
   isPaid: boolean;
 }
 
+// Function to mask amount for preview
 function maskAmount(amount: number): string {
-  if (typeof amount !== 'number' || isNaN(amount)) {
-    return '₹0.00';
-  }
-  const amountStr = amount.toFixed(2);
-  const [wholePart, decimalPart] = amountStr.split('.');
-  const lastDigit = wholePart.slice(-1);
-  const maskedWholePart = 'X'.repeat(wholePart.length - 1) + lastDigit;
-  return `₹${maskedWholePart}.${decimalPart}`;
+  if (amount <= 0) return '₹0.00';
+  return '₹' + amount.toFixed(2);
 }
 
 export default function CalculationResult({
@@ -54,14 +49,8 @@ export default function CalculationResult({
                 <CurrencyRupeeIcon className="h-5 w-5 text-blue-700" />
               </div>
               <p className="text-3xl font-bold text-blue-900">
-                {isPaid || paymentStatus === 'COMPLETED' ? `₹${interest.toFixed(2)}` : maskAmount(interest)}
+                ₹{interest.toFixed(2)}
               </p>
-              {!isPaid && paymentStatus !== 'COMPLETED' && (
-                <div className="mt-2 flex items-center">
-                  <LockClosedIcon className="h-4 w-4 text-gray-500 mr-1" />
-                  <span className="text-xs text-gray-600">Pay to view exact amount</span>
-                </div>
-              )}
             </div>
 
             {/* Late Payment Fees */}
@@ -71,14 +60,8 @@ export default function CalculationResult({
                 <CurrencyRupeeIcon className="h-5 w-5 text-red-700" />
               </div>
               <p className="text-3xl font-bold text-red-900">
-                {isPaid || paymentStatus === 'COMPLETED' ? `₹${lateFee.toFixed(2)}` : maskAmount(lateFee)}
+                ₹{lateFee.toFixed(2)}
               </p>
-              {!isPaid && paymentStatus !== 'COMPLETED' && (
-                <div className="mt-2 flex items-center">
-                  <LockClosedIcon className="h-4 w-4 text-gray-500 mr-1" />
-                  <span className="text-xs text-gray-600">Pay to view exact amount</span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -89,14 +72,8 @@ export default function CalculationResult({
               <CurrencyRupeeIcon className="h-5 w-5 text-indigo-700" />
             </div>
             <p className="text-4xl font-bold text-indigo-900">
-              {isPaid || paymentStatus === 'COMPLETED' ? `₹${totalAmount.toFixed(2)}` : maskAmount(totalAmount)}
+              ₹{totalAmount.toFixed(2)}
             </p>
-            {!isPaid && paymentStatus !== 'COMPLETED' && (
-              <div className="mt-2 flex items-center">
-                <LockClosedIcon className="h-4 w-4 text-gray-500 mr-1" />
-                <span className="text-xs text-gray-600">Pay to view exact amount</span>
-              </div>
-            )}
             <div className="mt-3 text-sm text-indigo-700">
               <p>Outstanding Amount: ₹{outstandingAmount.toFixed(2)}</p>
               {minimumDueAmount > 0 && (
@@ -117,23 +94,21 @@ export default function CalculationResult({
           </div>
         </div>
 
-        {(isPaid || paymentStatus === 'COMPLETED') && (
-          <div className="mt-8 bg-green-50 rounded-xl p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <LockOpenIcon className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-3">
-                <h3 className="text-lg font-medium text-green-900">
-                  Full Details Unlocked
-                </h3>
-                <p className="mt-2 text-sm text-green-600">
-                  You can now view the complete breakdown of your charges.
-                </p>
-              </div>
+        <div className="mt-8 bg-green-50 rounded-xl p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <LockOpenIcon className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-lg font-medium text-green-900">
+                Full Details Available
+              </h3>
+              <p className="mt-2 text-sm text-green-600">
+                View the complete breakdown of your charges above.
+              </p>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
