@@ -9,6 +9,7 @@ declare global {
   }
 }
 
+// Important: Only use this key on the client side
 const RAZORPAY_KEY_ID = 'rzp_live_RylHwwDOoIHii1';
 
 export async function initializeRazorpayPayment(amount: number) {
@@ -32,10 +33,12 @@ export async function initializeRazorpayPayment(amount: number) {
     const isEligibleForDiscount = user.checkDiscountEligibility();
     const finalAmount = isEligibleForDiscount ? amount * 0.9 : amount; // 10% discount for eligible users
 
-    // Load Razorpay script
-    await loadRazorpayScript();
-
     try {
+      // First check if we need to load the script
+      if (!(window as any).Razorpay) {
+        await loadRazorpayScript();
+      }
+
       // Create order
       const response = await fetch('/api/payments/create-order', {
         method: 'POST',
@@ -54,7 +57,7 @@ export async function initializeRazorpayPayment(amount: number) {
       return new Promise((resolve, reject) => {
         const options = {
           key: RAZORPAY_KEY_ID,
-          amount: finalAmount * 100, // Razorpay expects amount in paise
+          amount: Math.round(finalAmount * 100), // Razorpay expects amount in paise
           currency: 'INR',
           name: 'Credit Card Fee Calculator',
           description: 'Payment for credit card fee calculation',
@@ -111,6 +114,7 @@ export async function initializeRazorpayPayment(amount: number) {
   }
 }
 
+// Only load the script when needed
 const loadRazorpayScript = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     // Check if Razorpay is already loaded
@@ -122,6 +126,7 @@ const loadRazorpayScript = (): Promise<void> => {
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
+    script.defer = true; // Defer script execution
     script.onload = () => resolve();
     script.onerror = () => reject(new Error('Failed to load Razorpay script'));
     document.body.appendChild(script);
