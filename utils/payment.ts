@@ -11,6 +11,14 @@ declare global {
 
 export async function initializeRazorpayPayment(amount: number) {
   try {
+    // Add detailed logging at the start
+    console.log('Payment Initialization Debug:', {
+      hasKey: !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      keyPrefix: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID?.substring(0, 12),
+      environment: process.env.NODE_ENV,
+      buildTime: new Date().toISOString()
+    });
+
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
@@ -63,10 +71,20 @@ export async function initializeRazorpayPayment(amount: number) {
 
           // Get key from window if available, fallback to env variable
           const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-          console.log('Using Razorpay Key:', razorpayKeyId ? 'Key exists' : 'Key missing');
+          console.log('Using Razorpay Key:', {
+            keyExists: !!razorpayKeyId,
+            keyType: razorpayKeyId?.startsWith('rzp_test') ? 'test' : 'live',
+            environment: process.env.NODE_ENV,
+            keyPrefix: razorpayKeyId?.substring(0, 10) // Log first 10 chars to verify correct key
+          });
 
           if (!razorpayKeyId) {
             throw new Error('Razorpay key is missing. Please check your environment configuration.');
+          }
+
+          // Verify key format
+          if (!razorpayKeyId.startsWith('rzp_')) {
+            throw new Error('Invalid Razorpay key format. Please check your environment configuration.');
           }
 
           // Initialize Razorpay
