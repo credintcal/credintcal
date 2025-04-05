@@ -1,14 +1,5 @@
 import { NextResponse } from 'next/server';
-import Razorpay from 'razorpay';
-
-// Make sure we're using the server-side keys
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || '',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || '',
-});
-
-// For debugging
-console.log('Razorpay initialization with key_id:', process.env.RAZORPAY_KEY_ID ? 'Key exists' : 'Key missing');
+import { getRazorpayInstance } from '@/config/razorpay';
 
 export async function POST(request: Request) {
   try {
@@ -21,6 +12,9 @@ export async function POST(request: Request) {
       );
     }
 
+    // Get a Razorpay instance only when handling a request
+    const razorpay = getRazorpayInstance();
+    
     console.log('Creating Razorpay order for amount:', amount);
     const order = await razorpay.orders.create({
       amount: amount * 100, // Razorpay expects amount in paise
