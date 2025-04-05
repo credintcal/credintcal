@@ -3,15 +3,6 @@ import { getRazorpayInstance } from '@/config/razorpay';
 
 export async function POST(request: Request) {
   try {
-    // Verify Razorpay key in headers
-    const razorpayKey = request.headers.get('x-razorpay-key');
-    if (!razorpayKey || razorpayKey !== 'rzp_live_RylHwwDOoIHii1') {
-      return NextResponse.json(
-        { error: 'Invalid Razorpay key' },
-        { status: 401 }
-      );
-    }
-
     const { amount } = await request.json();
 
     if (!amount || amount <= 0) {
@@ -26,9 +17,12 @@ export async function POST(request: Request) {
     
     console.log('Creating Razorpay order for amount:', amount);
     const order = await razorpay.orders.create({
-      amount: amount * 100, // Razorpay expects amount in paise
+      amount: Math.round(amount * 100), // Razorpay expects amount in paise (ensure it's an integer)
       currency: 'INR',
       receipt: `receipt_${Date.now()}`,
+      notes: {
+        purpose: 'Credit Card Fee Calculator'
+      }
     });
     console.log('Razorpay order created:', order.id);
 
