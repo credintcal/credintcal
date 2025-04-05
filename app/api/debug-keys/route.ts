@@ -1,33 +1,39 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  // Only allow in development and preview environments
-  if (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV !== 'preview') {
+  // Only allow in development mode
+  if (process.env.NODE_ENV === 'production') {
     return NextResponse.json(
-      { error: 'This endpoint is not available in production' },
+      { error: 'This endpoint is only available in development mode' },
       { status: 403 }
     );
   }
 
-  // Safely get key information without exposing full keys
-  const keyInfo = {
-    frontend: {
-      hasKey: !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-      keyPrefix: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID?.substring(0, 12),
-      environment: process.env.NODE_ENV
+  const authKeys = {
+    NEXTAUTH_SECRET: {
+      hasKey: Boolean(process.env.NEXTAUTH_SECRET),
+      prefix: process.env.NEXTAUTH_SECRET ? process.env.NEXTAUTH_SECRET.substring(0, 6) + '...' : 'missing',
     },
-    backend: {
-      hasKey: !!process.env.RAZORPAY_KEY_ID,
-      keyPrefix: process.env.RAZORPAY_KEY_ID?.substring(0, 12),
-      hasSecret: !!process.env.RAZORPAY_KEY_SECRET,
-      environment: process.env.NODE_ENV
+    NEXTAUTH_URL: {
+      value: process.env.NEXTAUTH_URL || 'missing',
     },
-    build: {
-      timestamp: new Date().toISOString(),
-      nodeVersion: process.version,
-      vercelEnv: process.env.VERCEL_ENV
-    }
+    NEXT_PUBLIC_APP_URL: {
+      value: process.env.NEXT_PUBLIC_APP_URL || 'missing',
+    },
   };
 
-  return NextResponse.json(keyInfo);
+  const databaseKeys = {
+    DATABASE_URL: {
+      hasKey: Boolean(process.env.DATABASE_URL),
+      prefix: process.env.DATABASE_URL 
+        ? process.env.DATABASE_URL.split('://')[0] + '://' + '...' 
+        : 'missing',
+    },
+  };
+
+  return NextResponse.json({
+    auth: authKeys,
+    database: databaseKeys,
+    timestamp: new Date().toISOString(),
+  });
 } 

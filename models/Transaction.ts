@@ -23,7 +23,6 @@ export interface ITransaction {
   lateFee: number;
   totalAmount: number;
   paymentStatus: 'PENDING' | 'COMPLETED';
-  razorpayPaymentId?: string;
   createdAt: Date;
 }
 
@@ -93,10 +92,7 @@ const transactionSchema = new Schema<ITransactionDocument>(
     paymentStatus: {
       type: String,
       enum: ['PENDING', 'COMPLETED'],
-      default: 'PENDING',
-    },
-    razorpayPaymentId: {
-      type: String,
+      default: 'COMPLETED', // Default to COMPLETED to show full results
     },
     createdAt: {
       type: Date,
