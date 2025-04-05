@@ -7,7 +7,6 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { initializeRazorpayPayment } from '../../utils/payment';
 import CalculationResult from './CalculationResult';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
 import { LightBulbIcon } from '@heroicons/react/24/outline';
@@ -26,14 +25,25 @@ export default function PdfUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [paymentDate, setPaymentDate] = useState<Date | null>(null);
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
   const [calculationResult, setCalculationResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isPaid, setIsPaid] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      outstandingAmount: 0,
+      minimumDueAmount: 0,
+      minimumDuePaid: false,
+      pdfPassword: '',
+    },
+  });
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles[0]) {
+    if (acceptedFiles.length > 0) {
       setFile(acceptedFiles[0]);
     }
   }, []);
@@ -43,72 +53,56 @@ export default function PdfUpload() {
     accept: {
       'application/pdf': ['.pdf'],
     },
-    maxSize: 10 * 1024 * 1024, // 10MB
-    multiple: false,
-  });
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    maxFiles: 1,
   });
 
   const onSubmit = async (data: FormData) => {
-    if (!file || !dueDate || !paymentDate || !startDate || !endDate) {
-      alert('Please provide all required information');
+    if (!file) {
+      alert('Please upload a PDF file');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('data', JSON.stringify({
-      ...data,
-      dueDate,
-      paymentDate,
-      startDate,
-      endDate,
-    }));
+    if (!dueDate || !paymentDate) {
+      alert('Please select due date and payment date');
+      return;
+    }
 
     setIsLoading(true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('bank', data.bank);
+    formData.append('outstandingAmount', data.outstandingAmount.toString());
+    formData.append('minimumDueAmount', data.minimumDueAmount.toString());
+    formData.append('minimumDuePaid', data.minimumDuePaid.toString());
+    formData.append('dueDate', dueDate.toISOString());
+    formData.append('paymentDate', paymentDate.toISOString());
+    
+    if (data.pdfPassword) {
+      formData.append('pdfPassword', data.pdfPassword);
+    }
+
     try {
       const response = await fetch('/api/process-pdf', {
         method: 'POST',
         body: formData,
       });
 
-      const result = await response.json();
-      setCalculationResult(result);
-    } catch (error) {
-      console.error('PDF processing failed:', error);
-      alert('Failed to process PDF. Please try again.');
-    }
-    setIsLoading(false);
-  };
-
-  const handlePayment = async () => {
-    if (calculationResult?.transactionId) {
-      const success = await initializeRazorpayPayment(calculationResult.transactionId);
-      if (success) {
-        setIsPaid(true);
-        // Fetch updated transaction details
-        try {
-          const response = await fetch('/api/process-pdf', {
-            method: 'POST',
-            body: JSON.stringify({
-              transactionId: calculationResult.transactionId,
-            }),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-          const result = await response.json();
-          setCalculationResult(result);
-        } catch (error) {
-          console.error('Failed to fetch updated details:', error);
-        }
+      if (!response.ok) {
+        throw new Error('Failed to process PDF');
       }
+
+      const result = await response.json();
+      setCalculationResult({
+        ...result,
+        // Always set payment as completed to show full results
+        paymentStatus: 'COMPLETED'
+      });
+    } catch (error) {
+      console.error('Error processing PDF:', error);
+      alert('Failed to process the PDF. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -127,243 +121,173 @@ export default function PdfUpload() {
 
   return (
     <div className="space-y-6">
-      <div className="relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-xl blur opacity-20 group-hover:opacity-30 transition duration-300"></div>
-        <div className="relative flex items-start p-5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100">
-          <div className="flex-shrink-0 mr-4">
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" />
-              </svg>
-            </div>
-          </div>
-          <div>
-            <h3 className="text-md font-bold text-blue-800 mb-1">Pro Tip</h3>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              For the most reliable experience, we recommend using the <span className="font-semibold text-indigo-600">Manual Entry</span> option. PDF upload feature is currently in beta testing.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {!isLoading && (
-        <div className="mt-2">
-          <div className="rounded-xl bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 p-4 border border-indigo-100">
-            <div className="flex items-center">
-              <span className="inline-flex items-center justify-center p-2 bg-indigo-100 rounded-full mr-3">
-                <LightBulbIcon className="h-5 w-5 text-indigo-600" />
-              </span>
-              <h4 className="font-medium text-indigo-700">Pro tip</h4>
-            </div>
-            <p className="mt-1 text-sm text-gray-600 ml-12">
-              For accurate results, ensure your PDF statement is from a recognized bank. 
-              The clearer the data format, the better the results.
-            </p>
-          </div>
-        </div>
-      )}
-
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        <div
-          {...getRootProps()}
-          className={`overflow-hidden relative border-2 dashed rounded-2xl transition-all duration-300 group
-            ${isDragActive 
-              ? 'border-blue-500 bg-blue-50 shadow-lg' 
-              : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50 hover:shadow-md'
+        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">Upload Your Credit Card Statement</h2>
+            <div className="text-blue-600 bg-blue-50 p-2 rounded-full">
+              <DocumentTextIcon className="h-6 w-6" />
+            </div>
+          </div>
+
+          <div 
+            {...getRootProps()} 
+            className={`border-2 border-dashed rounded-xl p-6 mb-4 text-center cursor-pointer transition-colors ${
+              isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'
             }`}
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-white/10 to-indigo-50/30 rounded-2xl"></div>
-          <div className="p-10 text-center relative">
+          >
             <input {...getInputProps()} />
+            <DocumentTextIcon className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+            
             {file ? (
-              <div className="space-y-3">
-                <div className="flex items-center justify-center text-blue-600">
-                  <div className="p-3 bg-blue-100 rounded-full">
-                    <DocumentTextIcon className="h-8 w-8" />
-                  </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-700">Selected file:</p>
+                <div className="bg-gray-100 rounded-lg p-2">
+                  <p className="text-sm text-gray-800 truncate">{file.name}</p>
+                  <p className="text-xs text-gray-500">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
                 </div>
-                <p className="text-sm font-medium text-gray-900 mt-2">
-                  {file.name}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Click or drag to replace
-                </p>
+                <p className="text-xs text-blue-600">Click or drag to replace</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-center text-gray-400">
-                  <div className="p-3 bg-gray-100 rounded-full group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors duration-300">
-                    <DocumentTextIcon className="h-8 w-8" />
-                  </div>
-                </div>
-                <p className="text-sm font-medium text-gray-900 mt-2">
-                  Drag & drop your PDF statement here
+              <div>
+                <p className="text-sm text-gray-600 mb-1">
+                  {isDragActive ? 'Drop your PDF here' : 'Drag & drop your credit card statement PDF here'}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  or click to select a file (max 10MB)
-                </p>
+                <p className="text-xs text-gray-500">or click to browse files</p>
               </div>
             )}
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Bank</label>
-            <select
-              {...register('bank')}
-              className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
-            >
-              <option value="">Select a bank</option>
-              {banks.map((bank) => (
-                <option key={bank} value={bank}>
-                  {bank}
-                </option>
-              ))}
-            </select>
-            {errors.bank && (
-              <p className="mt-1 text-sm text-red-600">{errors.bank.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              PDF Password (if applicable)
-            </label>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">PDF Password (Optional)</label>
             <input
               type="password"
               {...register('pdfPassword')}
-              className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
-              placeholder="Leave blank if not password protected"
+              className="block w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              placeholder="Enter password if PDF is protected"
             />
+            <p className="mt-1 text-xs text-gray-500">Leave empty if your PDF is not password protected</p>
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Outstanding Amount (₹)
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">₹</span>
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-100 mb-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <LightBulbIcon className="h-5 w-5 text-blue-500" />
               </div>
-              <input
-                type="number"
-                {...register('outstandingAmount', { valueAsNumber: true })}
-                className="mt-1 block w-full pl-10 pr-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
-                placeholder="0.00"
-              />
-            </div>
-            {errors.outstandingAmount && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.outstandingAmount.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Statement Period
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="relative">
-                <DatePicker
-                  selected={startDate}
-                  onChange={(date) => setStartDate(date)}
-                  className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
-                  dateFormat="dd/MM/yyyy"
-                  placeholderText="Start Date"
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="relative">
-                <DatePicker
-                  selected={endDate}
-                  onChange={(date) => setEndDate(date)}
-                  className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
-                  dateFormat="dd/MM/yyyy"
-                  placeholderText="End Date"
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
+              <div className="ml-3">
+                <p className="text-sm text-blue-700">
+                  We'll try to automatically extract information from your statement. You can adjust the values manually if needed.
+                </p>
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Due Date
-            </label>
-            <div className="relative">
-              <DatePicker
-                selected={dueDate}
-                onChange={(date) => setDueDate(date)}
+        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6">Statement Details</h2>
+
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Bank / Card Provider
+              </label>
+              <select
+                {...register('bank')}
                 className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
-                dateFormat="dd/MM/yyyy"
-                placeholderText="Select date"
-              />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+              >
+                <option value="">Select your bank</option>
+                {banks.map((bank) => (
+                  <option key={bank} value={bank}>
+                    {bank}
+                  </option>
+                ))}
+              </select>
+              {errors.bank && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.bank.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Outstanding Amount (₹)
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">₹</span>
+                </div>
+                <input
+                  type="number"
+                  {...register('outstandingAmount', { valueAsNumber: true })}
+                  className="mt-1 block w-full pl-10 pr-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
+                  placeholder="0.00"
+                />
+              </div>
+              {errors.outstandingAmount && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.outstandingAmount.message}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Due Date
+                </label>
+                <DatePicker
+                  selected={dueDate}
+                  onChange={(date) => setDueDate(date)}
+                  className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
+                  placeholderText="Select due date"
+                  dateFormat="MMMM d, yyyy"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Payment Date
+                </label>
+                <DatePicker
+                  selected={paymentDate}
+                  onChange={(date) => setPaymentDate(date)}
+                  className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
+                  placeholderText="Select payment date"
+                  dateFormat="MMMM d, yyyy"
+                />
               </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Payment Date
-            </label>
-            <div className="relative">
-              <DatePicker
-                selected={paymentDate}
-                onChange={(date) => setPaymentDate(date)}
-                className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
-                dateFormat="dd/MM/yyyy"
-                placeholderText="Select date"
-              />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Minimum Due Amount (₹)
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">₹</span>
+                </div>
+                <input
+                  type="number"
+                  {...register('minimumDueAmount', { valueAsNumber: true })}
+                  className="mt-1 block w-full pl-10 pr-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
+                  placeholder="0.00"
+                />
               </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Minimum Due Amount (₹)
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">₹</span>
-              </div>
-              <input
-                type="number"
-                {...register('minimumDueAmount', { valueAsNumber: true })}
-                className="mt-1 block w-full pl-10 pr-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-blur-sm transition-all duration-200 hover:bg-opacity-100"
-                placeholder="0.00"
-              />
+            <div className="flex items-center h-full pt-8">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  {...register('minimumDuePaid')}
+                  className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 transition-colors"
+                />
+                <span className="ml-3 text-sm text-gray-700">
+                  Minimum due amount paid by due date
+                </span>
+              </label>
             </div>
-          </div>
-
-          <div className="flex items-center h-full pt-8">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                {...register('minimumDuePaid')}
-                className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 transition-colors"
-              />
-              <span className="ml-3 text-sm text-gray-700">
-                Minimum due amount paid by due date
-              </span>
-            </label>
           </div>
         </div>
 
@@ -394,8 +318,7 @@ export default function PdfUpload() {
       {calculationResult && (
         <CalculationResult
           result={calculationResult}
-          isPaid={isPaid}
-          onPayment={handlePayment}
+          isPaid={true}
         />
       )}
     </div>
