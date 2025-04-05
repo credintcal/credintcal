@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node -e \"try { require('next').build({}) } catch(e) { console.error('BUILD ERROR:', e); process.exit(1) }\"",
     "start": "next start",
     "lint": "next lint"
   },
