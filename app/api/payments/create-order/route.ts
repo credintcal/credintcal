@@ -3,6 +3,15 @@ import { getRazorpayInstance } from '@/config/razorpay';
 
 export async function POST(request: Request) {
   try {
+    // Verify Razorpay key in headers
+    const razorpayKey = request.headers.get('x-razorpay-key');
+    if (!razorpayKey || razorpayKey !== 'rzp_live_RylHwwDOoIHii1') {
+      return NextResponse.json(
+        { error: 'Invalid Razorpay key' },
+        { status: 401 }
+      );
+    }
+
     const { amount } = await request.json();
 
     if (!amount || amount <= 0) {
@@ -12,7 +21,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get a Razorpay instance only when handling a request
+    // Get a Razorpay instance
     const razorpay = getRazorpayInstance();
     
     console.log('Creating Razorpay order for amount:', amount);
