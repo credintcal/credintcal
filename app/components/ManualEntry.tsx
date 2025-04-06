@@ -8,6 +8,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { initializeRazorpayPayment } from '../../utils/payment';
 import CalculationResult from './CalculationResult';
+import { 
+  BanknotesIcon, 
+  CalendarIcon, 
+  CreditCardIcon,
+  ArrowLongRightIcon,
+  CheckIcon
+} from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 
 const schema = z.object({
   bank: z.string().min(1, 'Bank is required'),
@@ -52,7 +60,7 @@ export default function ManualEntry() {
 
   const onSubmit = async (data: FormData) => {
     if (!transactionDate || !dueDate || !paymentDate) {
-      alert('Please select all dates');
+      toast.error('Please select all dates');
       return;
     }
 
@@ -89,18 +97,23 @@ export default function ManualEntry() {
       const result = await response.json();
       console.log("Calculation result:", result);
       setCalculationResult(result);
+      toast.success('Calculation completed successfully');
     } catch (error) {
       console.error('Calculation failed:', error);
-      alert('Failed to calculate fees. Please try again. ' + (error instanceof Error ? error.message : String(error)));
+      toast.error('Failed to calculate fees. ' + (error instanceof Error ? error.message : String(error)));
     }
     setIsLoading(false);
   };
 
   const handlePayment = async () => {
     if (calculationResult?.transactionId) {
+      toast.loading('Initializing payment...');
       const success = await initializeRazorpayPayment(calculationResult.transactionId);
+      
       if (success) {
         setIsPaid(true);
+        toast.success('Payment successful!');
+        
         // Fetch updated transaction details
         try {
           const response = await fetch('/api/calculate', {
@@ -123,8 +136,10 @@ export default function ManualEntry() {
           setCalculationResult(result);
         } catch (error) {
           console.error('Failed to fetch updated details:', error);
-          alert('Payment was successful but failed to update details: ' + (error instanceof Error ? error.message : String(error)));
+          toast.error('Payment was successful but failed to update details: ' + (error instanceof Error ? error.message : String(error)));
         }
+      } else {
+        toast.error('Payment was not completed');
       }
     }
   };
@@ -143,42 +158,112 @@ export default function ManualEntry() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Bank</label>
-            <select
-              {...register('bank')}
-              className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
-            >
-              <option value="">Select a bank</option>
-              {banks.map((bank) => (
-                <option key={bank} value={bank}>
-                  {bank}
-                </option>
-              ))}
-            </select>
-            {errors.bank && (
-              <p className="mt-1 text-sm text-red-600">{errors.bank.message}</p>
-            )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Left Column */}
+          <div className="space-y-6">
+            {/* Bank Selection */}
+            <div className="space-y-2">
+              <label className="form-label-enhanced flex items-center gap-2">
+                <CreditCardIcon className="h-4 w-4 text-blue-600" />
+                Select Your Bank
+              </label>
+              <select
+                {...register('bank')}
+                className="form-select-enhanced"
+              >
+                <option value="">Select a bank</option>
+                {banks.map((bank) => (
+                  <option key={bank} value={bank}>
+                    {bank}
+                  </option>
+                ))}
+              </select>
+              {errors.bank && (
+                <p className="mt-1 text-sm text-red-600">{errors.bank.message}</p>
+              )}
+            </div>
+
+            {/* Transaction Date */}
+            <div className="space-y-2">
+              <label className="form-label-enhanced flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 text-blue-600" />
+                Transaction Date
+              </label>
+              <div className="relative">
+                <DatePicker
+                  selected={transactionDate}
+                  onChange={(date) => setTransactionDate(date)}
+                  className="form-input-enhanced w-full"
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Select transaction date"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <CalendarIcon className="h-5 w-5 text-slate-400" />
+                </div>
+              </div>
+            </div>
+
+            {/* Due Date */}
+            <div className="space-y-2">
+              <label className="form-label-enhanced flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 text-indigo-600" />
+                Due Date
+              </label>
+              <div className="relative">
+                <DatePicker
+                  selected={dueDate}
+                  onChange={(date) => setDueDate(date)}
+                  className="form-input-enhanced w-full"
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Select due date"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <CalendarIcon className="h-5 w-5 text-slate-400" />
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Date */}
+            <div className="space-y-2">
+              <label className="form-label-enhanced flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 text-green-600" />
+                Payment Date
+              </label>
+              <div className="relative">
+                <DatePicker
+                  selected={paymentDate}
+                  onChange={(date) => setPaymentDate(date)}
+                  className="form-input-enhanced w-full"
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Select payment date"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <CalendarIcon className="h-5 w-5 text-slate-400" />
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="outstandingAmount" className="block text-sm font-medium text-gray-700">
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Outstanding Amount */}
+            <div className="space-y-2">
+              <label htmlFor="outstandingAmount" className="form-label-enhanced flex items-center gap-2">
+                <BanknotesIcon className="h-4 w-4 text-blue-600" />
                 Outstanding Amount (₹)
               </label>
-              <div className="mt-1 relative rounded-xl shadow-sm">
+              <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">₹</span>
+                  <span className="text-slate-500 sm:text-sm">₹</span>
                 </div>
                 <input
                   type="number"
                   id="outstandingAmount"
                   step="0.01"
                   {...register('outstandingAmount', { valueAsNumber: true })}
-                  className="block w-full pl-8 pr-12 py-3 border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 shadow-sm hover:border-indigo-300"
+                  className="form-input-enhanced pl-8"
                   placeholder="0.00"
                 />
               </div>
@@ -187,20 +272,22 @@ export default function ManualEntry() {
               )}
             </div>
 
-            <div>
-              <label htmlFor="transactionAmount" className="block text-sm font-medium text-gray-700">
+            {/* Transaction Amount */}
+            <div className="space-y-2">
+              <label htmlFor="transactionAmount" className="form-label-enhanced flex items-center gap-2">
+                <BanknotesIcon className="h-4 w-4 text-indigo-600" />
                 Transaction Amount (₹)
               </label>
-              <div className="mt-1 relative rounded-xl shadow-sm">
+              <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">₹</span>
+                  <span className="text-slate-500 sm:text-sm">₹</span>
                 </div>
                 <input
                   type="number"
                   id="transactionAmount"
                   step="0.01"
                   {...register('transactionAmount', { valueAsNumber: true })}
-                  className="block w-full pl-8 pr-12 py-3 border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 shadow-sm hover:border-indigo-300"
+                  className="form-input-enhanced pl-8"
                   placeholder="0.00"
                 />
               </div>
@@ -209,126 +296,53 @@ export default function ManualEntry() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="minimumDueAmount" className="block text-sm font-medium text-gray-700">
-                  Minimum Due Amount (₹)
-                </label>
-                <div className="mt-1 relative rounded-xl shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">₹</span>
-                  </div>
-                  <input
-                    type="number"
-                    id="minimumDueAmount"
-                    step="0.01"
-                    {...register('minimumDueAmount', { valueAsNumber: true })}
-                    className="block w-full pl-8 pr-12 py-3 border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 shadow-sm hover:border-indigo-300"
-                    placeholder="0.00"
-                  />
+            {/* Minimum Due Amount */}
+            <div className="space-y-2">
+              <label htmlFor="minimumDueAmount" className="form-label-enhanced flex items-center gap-2">
+                <BanknotesIcon className="h-4 w-4 text-green-600" />
+                Minimum Due Amount (₹)
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-slate-500 sm:text-sm">₹</span>
                 </div>
-                {errors.minimumDueAmount && (
-                  <p className="mt-1 text-sm text-red-600">{errors.minimumDueAmount.message}</p>
-                )}
+                <input
+                  type="number"
+                  id="minimumDueAmount"
+                  step="0.01"
+                  {...register('minimumDueAmount', { valueAsNumber: true })}
+                  className="form-input-enhanced pl-8"
+                  placeholder="0.00"
+                />
               </div>
+              {errors.minimumDueAmount && (
+                <p className="mt-1 text-sm text-red-600">{errors.minimumDueAmount.message}</p>
+              )}
             </div>
 
-            <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 p-4 rounded-xl border border-indigo-100">
-              <fieldset>
-                <legend className="text-base font-medium text-indigo-700 flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  Payment Status
-                </legend>
-                <div className="mt-2 space-y-2">
-                  <div className="flex items-center">
-                    <input
-                      id="minimumDuePaid-yes"
-                      type="radio"
-                      name="minimumDuePaid"
-                      checked={minDuePaid === true}
-                      onChange={() => handleMinDuePaidChange(true)}
-                      className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
-                    />
-                    <label htmlFor="minimumDuePaid-yes" className="ml-3 block text-sm font-medium text-gray-700">
-                      Minimum due amount paid
-                    </label>
+            {/* Minimum Due Payment Status */}
+            <div className="space-y-2">
+              <label className="form-label-enhanced">Minimum Due Payment Status</label>
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className={`rounded-lg border ${minDuePaid ? 'border-green-200 bg-green-50 shadow-sm' : 'border-slate-200 bg-white'} p-4 flex items-center gap-2 cursor-pointer transition-all hover:shadow-sm`}
+                     onClick={() => handleMinDuePaidChange(true)}>
+                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${minDuePaid ? 'bg-green-600 border-green-600' : 'border-slate-300 bg-white'}`}>
+                    {minDuePaid && <CheckIcon className="h-3.5 w-3.5 text-white" />}
                   </div>
-                  <div className="flex items-center">
-                    <input
-                      id="minimumDuePaid-no"
-                      type="radio"
-                      name="minimumDuePaid"
-                      checked={minDuePaid === false}
-                      onChange={() => handleMinDuePaidChange(false)}
-                      className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
-                    />
-                    <label htmlFor="minimumDuePaid-no" className="ml-3 block text-sm font-medium text-gray-700">
-                      Minimum due amount not paid
-                    </label>
-                  </div>
+                  <label htmlFor="minimumDuePaid-yes" className="text-sm font-medium text-slate-700 cursor-pointer select-none">
+                    Minimum due amount paid
+                  </label>
                 </div>
-              </fieldset>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Transaction Date
-            </label>
-            <div className="relative">
-              <DatePicker
-                selected={transactionDate}
-                onChange={(date) => setTransactionDate(date)}
-                className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
-                dateFormat="dd/MM/yyyy"
-                placeholderText="Select date"
-              />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Due Date
-            </label>
-            <div className="relative">
-              <DatePicker
-                selected={dueDate}
-                onChange={(date) => setDueDate(date)}
-                className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
-                dateFormat="dd/MM/yyyy"
-                placeholderText="Select date"
-              />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Payment Date
-            </label>
-            <div className="relative">
-              <DatePicker
-                selected={paymentDate}
-                onChange={(date) => setPaymentDate(date)}
-                className="mt-1 block w-full px-4 py-3 rounded-xl border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm transition-all duration-200 hover:bg-white"
-                dateFormat="dd/MM/yyyy"
-                placeholderText="Select date"
-              />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+                
+                <div className={`rounded-lg border ${!minDuePaid ? 'border-red-200 bg-red-50 shadow-sm' : 'border-slate-200 bg-white'} p-4 flex items-center gap-2 cursor-pointer transition-all hover:shadow-sm`}
+                     onClick={() => handleMinDuePaidChange(false)}>
+                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${!minDuePaid ? 'bg-red-600 border-red-600' : 'border-slate-300 bg-white'}`}>
+                    {!minDuePaid && <CheckIcon className="h-3.5 w-3.5 text-white" />}
+                  </div>
+                  <label htmlFor="minimumDuePaid-no" className="text-sm font-medium text-slate-700 cursor-pointer select-none">
+                    Minimum due amount not paid
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -337,7 +351,7 @@ export default function ManualEntry() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:-translate-y-0.5"
+          className="btn-primary w-full"
         >
           {isLoading ? (
             <div className="flex items-center">
@@ -349,10 +363,8 @@ export default function ManualEntry() {
             </div>
           ) : (
             <span className="inline-flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
-              Calculate
+              <span>Calculate Now</span>
+              <ArrowLongRightIcon className="h-5 w-5 ml-2" />
             </span>
           )}
         </button>
