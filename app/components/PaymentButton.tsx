@@ -18,11 +18,12 @@ interface PaymentButtonProps {
 export default function PaymentButton({ amount, onSuccess, onFailure }: PaymentButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [razorpayInstance, setRazorpayInstance] = useState<any>(null);
 
   // Update the key ID to match the one in the error logs
   const RAZORPAY_KEY_ID = "rzp_live_39QG2VCC5qc2Wp";
   
-  // Clear any existing Razorpay sessions on mount
+  // Clear any existing Razorpay sessions on mount and initialize SDK
   useEffect(() => {
     // Clear localStorage items that might be causing session conflicts
     const localStorageKeys = Object.keys(localStorage);
@@ -34,6 +35,35 @@ export default function PaymentButton({ amount, onSuccess, onFailure }: PaymentB
       console.log("Clearing previous Razorpay sessions:", razorpayKeys);
       razorpayKeys.forEach(key => localStorage.removeItem(key));
     }
+
+    // Force reload the script to reinitialize Razorpay
+    if (typeof document !== 'undefined') {
+      // Remove any existing Razorpay script
+      const existingScript = document.querySelector('script[src*="razorpay"]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+    }
+
+    // Clear any cached Razorpay instances
+    if (typeof window !== 'undefined' && window.Razorpay) {
+      try {
+        delete window.Razorpay;
+      } catch (e) {
+        console.log("Could not delete Razorpay from window", e);
+      }
+    }
+    
+    return () => {
+      // Cleanup if component unmounts
+      if (razorpayInstance) {
+        try {
+          razorpayInstance.close();
+        } catch (e) {
+          console.log("Error closing Razorpay instance", e);
+        }
+      }
+    };
   }, []);
 
   const handleScriptLoad = () => {
@@ -55,6 +85,7 @@ export default function PaymentButton({ amount, onSuccess, onFailure }: PaymentB
         body: JSON.stringify({
           amount: amount * 100, // Convert to smallest currency unit (paise)
         }),
+        cache: 'no-store',
       });
       
       if (!response.ok) {
@@ -70,10 +101,12 @@ export default function PaymentButton({ amount, onSuccess, onFailure }: PaymentB
       if (typeof window.Razorpay === 'undefined') {
         console.error("Razorpay not loaded, reloading script");
         
-        // Try reloading the script
+        // Try reloading the script with fresh params to avoid caching issues
+        const timestamp = new Date().getTime();
         const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.src = `https://checkout.razorpay.com/v1/checkout.js?v=${timestamp}`;
         script.async = true;
+        script.defer = true;
         
         script.onload = () => {
           console.log("Razorpay script loaded manually");
@@ -132,40 +165,24 @@ export default function PaymentButton({ amount, onSuccess, onFailure }: PaymentB
           ondismiss: function() {
             console.log("Payment modal dismissed");
             setIsLoading(false);
-          }
+          },
+          escape: true, 
+          animation: true
         },
-        config: {
-          display: {
-            blocks: {
-              utib: {
-                name: "Pay using Axis Bank",
-                instruments: [
-                  { method: "card" },
-                  { method: "netbanking" },
-                  { method: "wallet" },
-                  { method: "upi" }
-                ]
-              },
-              other: {
-                name: "Other payment methods",
-                instruments: [
-                  { method: "card" },
-                  { method: "netbanking" },
-                  { method: "wallet" },
-                  { method: "upi" }
-                ]
-              }
-            },
-            sequence: ["block.utib", "block.other"],
-            preferences: {
-              show_default_blocks: false
-            }
-          }
-        }
+        // Remove config section that might be causing issues
+        retry: {
+          enabled: false,
+          max_count: 0
+        },
+        timeout: 300,
+        remember_customer: false
       };
       
       console.log("Initializing Razorpay with options:", { ...options, key: "HIDDEN" });
+      
+      // Create a new instance for each checkout
       const razorpay = new window.Razorpay(options);
+      setRazorpayInstance(razorpay);
       
       razorpay.on("payment.failed", function(response: any) {
         console.error("Payment failed:", response.error);
@@ -190,6 +207,7 @@ export default function PaymentButton({ amount, onSuccess, onFailure }: PaymentB
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(paymentResponse),
+        cache: 'no-store',
       });
       
       if (!response.ok) {
@@ -220,8 +238,8 @@ export default function PaymentButton({ amount, onSuccess, onFailure }: PaymentB
   return (
     <>
       <Script 
-        src="https://checkout.razorpay.com/v1/checkout.js" 
-        strategy="beforeInteractive"
+        src={`https://checkout.razorpay.com/v1/checkout.js?v=${new Date().getTime()}`}
+        strategy="afterInteractive"
         onLoad={handleScriptLoad}
         onError={() => console.error("Failed to load Razorpay script")}
       />
