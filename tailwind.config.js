@@ -5,6 +5,20 @@ module.exports = {
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  safelist: [
+    'glass-card', 
+    'glass-panel', 
+    'form-input-enhanced', 
+    'form-select-enhanced', 
+    'form-label-enhanced', 
+    'btn-primary',
+    'animate-fadeIn',
+    'animate-blob',
+    'animation-delay-2000',
+    'animation-delay-4000',
+    'card-hover-effect',
+    'bg-grid-slate-100'
+  ],
   theme: {
     extend: {
       backgroundImage: {
@@ -15,5 +29,6 @@ module.exports = {
   },
   plugins: [
     require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
   ],
 } 
