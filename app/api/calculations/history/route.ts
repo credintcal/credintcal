@@ -1,20 +1,25 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import User from '@/models/User';
 import { connectToDatabase } from '@/config/mongodb';
+import mongoose from 'mongoose';
+
+// Define a simple schema for storing calculations without user authentication
+const calculationSchema = new mongoose.Schema({
+  date: { type: Date, default: Date.now },
+  bank: { type: String, required: true },
+  amount: { type: Number, required: true },
+  interest: { type: Number, required: true },
+  lateFee: { type: Number, required: true },
+  total: { type: Number, required: true },
+  ip: { type: String },
+  userAgent: { type: String },
+});
+
+// Create or get the model
+const Calculation = mongoose.models.Calculation || 
+  mongoose.model('Calculation', calculationSchema);
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const { bank, amount, interest, lateFee, total } = await request.json();
 
     // Validate input
@@ -28,31 +33,19 @@ export async function POST(request: Request) {
     // Connect to database
     await connectToDatabase();
 
-    // Find user and update calculation history
-    const user = await User.findById(session.user.id);
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Add calculation to history
-    user.calculationHistory.push({
+    // Create a new calculation record
+    const calculationData = {
       date: new Date(),
       bank,
       amount,
       interest,
       lateFee,
       total,
-    });
+      ip: request.headers.get('x-forwarded-for') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+    };
 
-    // Keep only last 10 calculations
-    if (user.calculationHistory.length > 10) {
-      user.calculationHistory = user.calculationHistory.slice(-10);
-    }
-
-    await user.save();
+    await Calculation.create(calculationData);
 
     return NextResponse.json(
       { message: 'Calculation history updated successfully' },
@@ -70,29 +63,20 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     // Connect to database
     await connectToDatabase();
 
-    // Find user and get calculation history
-    const user = await User.findById(session.user.id);
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
+    // Get IP to identify calculations from same source
+    const clientIp = request.headers.get('x-forwarded-for') || 'unknown';
+    
+    // Get the 10 most recent calculations for this IP
+    const history = await Calculation.find({ ip: clientIp })
+      .sort({ date: -1 })
+      .limit(10)
+      .lean();
 
     return NextResponse.json(
-      { history: user.calculationHistory },
+      { history },
       { status: 200 }
     );
 
