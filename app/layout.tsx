@@ -15,13 +15,15 @@ import Footer from './components/Footer'
 const inter = Inter({ 
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-inter'
+  variable: '--font-inter',
+  preload: true
 })
 const poppins = Poppins({
   weight: ['400', '500', '600', '700'],
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-poppins'
+  variable: '--font-poppins',
+  preload: true
 })
 
 export const metadata: Metadata = {
