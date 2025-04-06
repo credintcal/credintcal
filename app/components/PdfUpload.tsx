@@ -95,8 +95,8 @@ export default function PdfUpload() {
       const result = await response.json();
       setCalculationResult({
         ...result,
-        // Always set payment as completed to show full results
-        paymentStatus: 'COMPLETED'
+        // Set payment as pending to require payment
+        paymentStatus: 'PENDING'
       });
     } catch (error) {
       console.error('Error processing PDF:', error);
@@ -318,7 +318,7 @@ export default function PdfUpload() {
       {calculationResult && (
         <CalculationResult
           result={calculationResult}
-          isPaid={true}
+          isPaid={false}
         />
       )}
     </div>

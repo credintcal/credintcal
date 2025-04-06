@@ -208,8 +208,7 @@ export default function ManualEntry() {
       const result = await response.json();
       setCalculationResult({
         ...result,
-        // Always set payment as completed to show full results without payment
-        paymentStatus: 'COMPLETED'
+        paymentStatus: 'PENDING'
       });
       
       // Track successful calculation
@@ -464,7 +463,7 @@ export default function ManualEntry() {
       {calculationResult && (
         <CalculationResult
           result={calculationResult}
-          isPaid={true}
+          isPaid={false}
         />
       )}
     </div>
