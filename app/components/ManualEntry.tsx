@@ -81,7 +81,9 @@ export default function ManualEntry() {
       });
 
       if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+        const errorData = await response.text();
+        console.error(`Server error (${response.status}):`, errorData);
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}. Details: ${errorData}`);
       }
 
       const result = await response.json();
@@ -89,7 +91,7 @@ export default function ManualEntry() {
       setCalculationResult(result);
     } catch (error) {
       console.error('Calculation failed:', error);
-      alert('Failed to calculate fees. Please try again.');
+      alert('Failed to calculate fees. Please try again. ' + (error instanceof Error ? error.message : String(error)));
     }
     setIsLoading(false);
   };
@@ -110,10 +112,18 @@ export default function ManualEntry() {
               transactionId: calculationResult.transactionId,
             }),
           });
+          
+          if (!response.ok) {
+            const errorData = await response.text();
+            console.error(`Server error (${response.status}):`, errorData);
+            throw new Error(`Failed to fetch updated transaction details`);
+          }
+          
           const result = await response.json();
           setCalculationResult(result);
         } catch (error) {
           console.error('Failed to fetch updated details:', error);
+          alert('Payment was successful but failed to update details: ' + (error instanceof Error ? error.message : String(error)));
         }
       }
     }
