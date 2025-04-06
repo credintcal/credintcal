@@ -19,8 +19,22 @@ export default function PaymentButton({ amount, onSuccess, onFailure }: PaymentB
   const [isLoading, setIsLoading] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
-  // Explicitly use the live key from your environment
-  const RAZORPAY_KEY_ID = "rzp_live_RylHwwDOoIHii1";
+  // Update the key ID to match the one in the error logs
+  const RAZORPAY_KEY_ID = "rzp_live_39QG2VCC5qc2Wp";
+  
+  // Clear any existing Razorpay sessions on mount
+  useEffect(() => {
+    // Clear localStorage items that might be causing session conflicts
+    const localStorageKeys = Object.keys(localStorage);
+    const razorpayKeys = localStorageKeys.filter(key => 
+      key.startsWith('razorpay') || key.includes('checkout')
+    );
+    
+    if (razorpayKeys.length > 0) {
+      console.log("Clearing previous Razorpay sessions:", razorpayKeys);
+      razorpayKeys.forEach(key => localStorage.removeItem(key));
+    }
+  }, []);
 
   const handleScriptLoad = () => {
     console.log("Razorpay script loaded successfully");
@@ -52,11 +66,44 @@ export default function PaymentButton({ amount, onSuccess, onFailure }: PaymentB
       const orderData = await response.json();
       console.log("Order created successfully:", orderData);
       
-      if (!window.Razorpay) {
-        console.error("Razorpay not loaded");
-        throw new Error("Razorpay SDK not loaded");
+      // Check if Razorpay is available
+      if (typeof window.Razorpay === 'undefined') {
+        console.error("Razorpay not loaded, reloading script");
+        
+        // Try reloading the script
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        
+        script.onload = () => {
+          console.log("Razorpay script loaded manually");
+          if (window.Razorpay) {
+            openRazorpayCheckout(orderData);
+          } else {
+            throw new Error("Failed to load Razorpay even after manual script injection");
+          }
+        };
+        
+        script.onerror = () => {
+          setIsLoading(false);
+          onFailure(new Error("Failed to load Razorpay payment script"));
+        };
+        
+        document.body.appendChild(script);
+        return;
       }
       
+      openRazorpayCheckout(orderData);
+      
+    } catch (error) {
+      console.error('Payment initialization error:', error);
+      onFailure(error);
+      setIsLoading(false);
+    }
+  };
+  
+  const openRazorpayCheckout = (orderData: any) => {
+    try {
       // Initialize Razorpay
       const options = {
         key: RAZORPAY_KEY_ID,
@@ -86,21 +133,49 @@ export default function PaymentButton({ amount, onSuccess, onFailure }: PaymentB
             console.log("Payment modal dismissed");
             setIsLoading(false);
           }
+        },
+        config: {
+          display: {
+            blocks: {
+              utib: {
+                name: "Pay using Axis Bank",
+                instruments: [
+                  { method: "card" },
+                  { method: "netbanking" },
+                  { method: "wallet" },
+                  { method: "upi" }
+                ]
+              },
+              other: {
+                name: "Other payment methods",
+                instruments: [
+                  { method: "card" },
+                  { method: "netbanking" },
+                  { method: "wallet" },
+                  { method: "upi" }
+                ]
+              }
+            },
+            sequence: ["block.utib", "block.other"],
+            preferences: {
+              show_default_blocks: false
+            }
+          }
         }
       };
       
       console.log("Initializing Razorpay with options:", { ...options, key: "HIDDEN" });
       const razorpay = new window.Razorpay(options);
+      
       razorpay.on("payment.failed", function(response: any) {
         console.error("Payment failed:", response.error);
-        onFailure(new Error(`Payment failed: ${response.error.description}`));
+        onFailure(new Error(`Payment failed: ${response.error?.description || 'Unknown error'}`));
         setIsLoading(false);
       });
       
       razorpay.open();
-      
     } catch (error) {
-      console.error('Payment initialization error:', error);
+      console.error("Error opening Razorpay checkout:", error);
       onFailure(error);
       setIsLoading(false);
     }
