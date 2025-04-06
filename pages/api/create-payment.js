@@ -18,8 +18,20 @@ const connectToMongoDB = async () => {
       console.log('Using existing MongoDB connection');
       return;
     }
+
+    if (!MONGODB_URI) {
+      throw new Error('MongoDB URI is not defined in environment variables');
+    }
     
-    console.log('Connecting to MongoDB...', MONGODB_URI ? 'URI exists' : 'URI missing');
+    // Validate MongoDB URI format
+    if (!MONGODB_URI.startsWith('mongodb://') && !MONGODB_URI.startsWith('mongodb+srv://')) {
+      console.error('Invalid MongoDB URI format:', 
+                   MONGODB_URI.substring(0, 15) + '...');
+      throw new Error('Invalid MongoDB URI format. URI must start with mongodb:// or mongodb+srv://');
+    }
+    
+    console.log('Connecting to MongoDB...', 
+               MONGODB_URI ? MONGODB_URI.split('@')[1] : 'URI missing');
     
     await mongoose.connect(MONGODB_URI, {
       useNewUrlParser: true,
@@ -91,7 +103,16 @@ export default async function handler(req, res) {
   try {
     console.log(`Payment API called with method: ${req.method}`);
     // Connect to MongoDB
-    await connectToMongoDB();
+    try {
+      await connectToMongoDB();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({
+        error: 'Database connection failed',
+        details: dbError.message,
+        mongoUri: MONGODB_URI ? `${MONGODB_URI.substring(0, 10)}...` : 'undefined'
+      });
+    }
     
     // Get transaction model
     const Transaction = ensureTransaction();
@@ -122,7 +143,10 @@ export default async function handler(req, res) {
         });
       } catch (error) {
         console.error('Payment creation error:', error);
-        return res.status(500).json({ error: 'Failed to create payment' });
+        return res.status(500).json({ 
+          error: 'Failed to create payment',
+          details: error.message
+        });
       }
     } else if (req.method === 'PUT') {
       const {

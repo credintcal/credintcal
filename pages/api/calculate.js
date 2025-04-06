@@ -19,7 +19,19 @@ const connectToMongoDB = async () => {
       return;
     }
     
-    console.log('Connecting to MongoDB...', MONGODB_URI ? 'URI exists' : 'URI missing');
+    if (!MONGODB_URI) {
+      throw new Error('MongoDB URI is not defined in environment variables');
+    }
+    
+    // Validate MongoDB URI format
+    if (!MONGODB_URI.startsWith('mongodb://') && !MONGODB_URI.startsWith('mongodb+srv://')) {
+      console.error('Invalid MongoDB URI format:', 
+                    MONGODB_URI.substring(0, 15) + '...');
+      throw new Error('Invalid MongoDB URI format. URI must start with mongodb:// or mongodb+srv://');
+    }
+    
+    console.log('Connecting to MongoDB...', 
+                MONGODB_URI ? MONGODB_URI.split('@')[1] : 'URI missing');
     
     await mongoose.connect(MONGODB_URI, {
       useNewUrlParser: true,
@@ -103,7 +115,8 @@ export default async function handler(req, res) {
       console.error('Database connection error:', dbError);
       return res.status(500).json({
         error: 'Database connection failed',
-        details: dbError.message
+        details: dbError.message,
+        mongoUri: MONGODB_URI ? `${MONGODB_URI.substring(0, 10)}...` : 'undefined'
       });
     }
     
@@ -147,7 +160,7 @@ export default async function handler(req, res) {
           minimumDueAmount: transaction.minimumDueAmount,
           minimumDuePaid: transaction.minimumDuePaid,
           paymentStatus: transaction.paymentStatus,
-          transactionId: transaction._id,
+          transactionId: transaction._id.toString(),
         });
       } catch (error) {
         console.error('Error fetching transaction:', error);
