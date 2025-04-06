@@ -21,7 +21,7 @@ export default function PaymentButton({ amount, onSuccess, onFailure }: PaymentB
   const [razorpayInstance, setRazorpayInstance] = useState<any>(null);
 
   // Update the key ID to match the one in the error logs
-  const RAZORPAY_KEY_ID = "rzp_live_39QG2VCC5qc2Wp";
+  const RAZORPAY_KEY_ID = "rzp_live_s4fVSdQglDbLt8";
   
   // Clear any existing Razorpay sessions on mount and initialize SDK
   useEffect(() => {
