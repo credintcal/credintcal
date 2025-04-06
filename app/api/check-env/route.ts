@@ -1,43 +1,29 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  // Check for default NextAuth environment variables
-  const authStatus = {
-    NEXTAUTH_SECRET: Boolean(process.env.NEXTAUTH_SECRET),
-    NEXTAUTH_URL: Boolean(process.env.NEXTAUTH_URL),
+  // Check for environment variables
+  const envVariables = {
+    // Razorpay keys
+    RAZORPAY_KEY_ID: Boolean(process.env.RAZORPAY_KEY_ID),
+    RAZORPAY_KEY_SECRET: Boolean(process.env.RAZORPAY_KEY_SECRET),
+    NEXT_PUBLIC_RAZORPAY_KEY_ID: Boolean(process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID),
+    
+    // Analytics
+    NEXT_PUBLIC_GA_MEASUREMENT_ID: Boolean(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID),
+    
+    // Application URL
     NEXT_PUBLIC_APP_URL: Boolean(process.env.NEXT_PUBLIC_APP_URL),
   };
 
-  // Check for database URL
-  const databaseStatus = {
-    DATABASE_URL: Boolean(process.env.DATABASE_URL),
-  };
-
-  // Check for analytics
-  const analyticsStatus = {
-    NEXT_PUBLIC_GA_MEASUREMENT_ID: Boolean(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID),
-  };
-
-  // Check for email (Brevo) API key
-  const emailStatus = {
-    BREVO_API_KEY: Boolean(process.env.BREVO_API_KEY),
-  };
-
-  // Get Node.js and NPM versions
-  const nodeVersion = process.version;
-  const npmVersion = process.env.npm_config_user_agent
-    ? process.env.npm_config_user_agent.split(' ')[0].split('/')[1]
-    : 'unknown';
+  // Check if all required variables are present
+  const missingVariables = Object.entries(envVariables)
+    .filter(([_, exists]) => !exists)
+    .map(([name]) => name);
 
   return NextResponse.json({
-    auth: authStatus,
-    database: databaseStatus,
-    analytics: analyticsStatus,
-    email: emailStatus,
-    versions: {
-      node: nodeVersion,
-      npm: npmVersion,
-    },
-    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    allVariablesPresent: missingVariables.length === 0,
+    missingVariables,
+    variables: envVariables
   });
 } 

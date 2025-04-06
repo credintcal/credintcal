@@ -9,31 +9,22 @@ export async function GET() {
     );
   }
 
-  const authKeys = {
-    NEXTAUTH_SECRET: {
-      hasKey: Boolean(process.env.NEXTAUTH_SECRET),
-      prefix: process.env.NEXTAUTH_SECRET ? process.env.NEXTAUTH_SECRET.substring(0, 6) + '...' : 'missing',
+  // Return a JSON response with key information
+  return NextResponse.json({
+    RAZORPAY_KEY_ID: {
+      hasKey: Boolean(process.env.RAZORPAY_KEY_ID),
+      prefix: process.env.RAZORPAY_KEY_ID ? process.env.RAZORPAY_KEY_ID.substring(0, 6) + '...' : 'missing',
     },
-    NEXTAUTH_URL: {
-      value: process.env.NEXTAUTH_URL || 'missing',
+    RAZORPAY_KEY_SECRET: {
+      hasKey: Boolean(process.env.RAZORPAY_KEY_SECRET),
+      prefix: process.env.RAZORPAY_KEY_SECRET ? process.env.RAZORPAY_KEY_SECRET.substring(0, 3) + '...' : 'missing',
     },
     NEXT_PUBLIC_APP_URL: {
       value: process.env.NEXT_PUBLIC_APP_URL || 'missing',
     },
-  };
-
-  const databaseKeys = {
-    DATABASE_URL: {
-      hasKey: Boolean(process.env.DATABASE_URL),
-      prefix: process.env.DATABASE_URL 
-        ? process.env.DATABASE_URL.split('://')[0] + '://' + '...' 
-        : 'missing',
+    NEXT_PUBLIC_GA_MEASUREMENT_ID: {
+      hasKey: Boolean(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID),
+      prefix: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'missing',
     },
-  };
-
-  return NextResponse.json({
-    auth: authKeys,
-    database: databaseKeys,
-    timestamp: new Date().toISOString(),
   });
 } 
