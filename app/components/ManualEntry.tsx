@@ -34,24 +34,33 @@ const schema = z.object({
   ).optional()
 });
 
-type FormData = z.infer<typeof schema>;
-
-type Transaction = {
-  amount: number;
-  date: Date | null;
-  error?: string | null;
-};
+interface FormData {
+  bank: string;
+  statementDate: Date;
+  dueDate: Date;
+  paymentDate: Date;
+  transactions: Array<{
+    amount: string;
+    date: Date;
+    error?: string;
+  }>;
+  totalAmount: string;
+}
 
 export default function ManualEntry() {
-  const [statementDate, setStatementDate] = useState<Date | null>(null);
-  const [dueDate, setDueDate] = useState<Date | null>(null);
-  const [paymentDate, setPaymentDate] = useState<Date | null>(null);
+  const [formData, setFormData] = useState<FormData>({
+    bank: '',
+    statementDate: new Date(),
+    dueDate: new Date(),
+    paymentDate: new Date(),
+    transactions: [{ amount: '', date: new Date() }],
+    totalAmount: '',
+  });
   const [calculationResult, setCalculationResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [minDuePaid, setMinDuePaid] = useState(false);
-  const [transactions, setTransactions] = useState<Transaction[]>([{ amount: 0, date: null }]);
-  
+
   const {
     register,
     handleSubmit,
@@ -96,74 +105,99 @@ export default function ManualEntry() {
 
   // Handle transaction date change
   const handleTransactionDateChange = (index: number, date: Date | null) => {
-    const newTransactions = [...transactions];
+    const newTransactions = [...formData.transactions];
     newTransactions[index].date = date;
     
-    if (date && statementDate) {
-      const error = validateTransactionDate(date, statementDate);
+    if (date && formData.statementDate) {
+      const error = validateTransactionDate(date, formData.statementDate);
       newTransactions[index].error = error;
     } else {
       newTransactions[index].error = null;
     }
     
-    setTransactions(newTransactions);
+    setFormData({ ...formData, transactions: newTransactions });
   };
 
   // Handle transaction amount change
   const handleTransactionAmountChange = (index: number, amount: string) => {
-    const newTransactions = [...transactions];
+    const newTransactions = [...formData.transactions];
     newTransactions[index].amount = parseFloat(amount) || 0;
-    setTransactions(newTransactions);
+    setFormData({ ...formData, transactions: newTransactions });
   };
 
   // Add new transaction
   const addTransaction = () => {
-    setTransactions([...transactions, { amount: 0, date: null }]);
+    setFormData({ ...formData, transactions: [...formData.transactions, { amount: 0, date: null }] });
     toast.success('New transaction added');
   };
 
   // Remove transaction
   const removeTransaction = (index: number) => {
-    if (transactions.length > 1) {
-      const newTransactions = [...transactions];
+    if (formData.transactions.length > 1) {
+      const newTransactions = [...formData.transactions];
       newTransactions.splice(index, 1);
-      setTransactions(newTransactions);
+      setFormData({ ...formData, transactions: newTransactions });
       toast.success('Transaction removed');
     }
   };
 
   // Handle statement date change
   const handleStatementDateChange = (date: Date | null) => {
-    setStatementDate(date);
+    setFormData({ ...formData, statementDate: date });
     
     // Update validation for all transactions
     if (date) {
-      const newTransactions = [...transactions];
+      const newTransactions = [...formData.transactions];
       newTransactions.forEach((transaction, index) => {
         if (transaction.date) {
           const error = validateTransactionDate(transaction.date, date);
           newTransactions[index].error = error;
         }
       });
-      setTransactions(newTransactions);
+      setFormData({ ...formData, transactions: newTransactions });
     }
   };
 
+  const handleTransactionChange = (index: number, field: 'amount' | 'date', value: string | Date) => {
+    const newTransactions = [...formData.transactions];
+    if (field === 'amount') {
+      newTransactions[index] = {
+        ...newTransactions[index],
+        amount: value as string,
+      };
+    } else {
+      newTransactions[index] = {
+        ...newTransactions[index],
+        date: value as Date,
+      };
+    }
+    setFormData({ ...formData, transactions: newTransactions });
+  };
+
+  const handleDateChange = (field: 'statementDate' | 'dueDate' | 'paymentDate', date: Date) => {
+    setFormData({ ...formData, [field]: date });
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
   const onSubmit = async (data: FormData) => {
-    if (!statementDate || !dueDate || !paymentDate) {
+    if (!formData.statementDate || !formData.dueDate || !formData.paymentDate) {
       toast.error('Please select all dates');
       return;
     }
 
     // Check if all transactions have dates
-    const incompleteTx = transactions.find(tx => !tx.date);
+    const incompleteTx = formData.transactions.find(tx => !tx.date);
     if (incompleteTx) {
       toast.error('Please select dates for all transactions');
       return;
     }
     
     // Check if any transaction has an error
-    const invalidTx = transactions.find(tx => tx.error);
+    const invalidTx = formData.transactions.find(tx => tx.error);
     if (invalidTx) {
       toast.error('One or more transactions have date validation errors');
       return;
@@ -171,17 +205,17 @@ export default function ManualEntry() {
 
     setIsLoading(true);
     try {
-      const formattedTransactions = transactions.map(tx => ({
+      const formattedTransactions = formData.transactions.map(tx => ({
         amount: tx.amount,
         date: tx.date
       }));
       
       console.log("Submitting data:", {
         ...data,
-        statementDate,
+        statementDate: formData.statementDate,
         transactions: formattedTransactions,
-        dueDate,
-        paymentDate,
+        dueDate: formData.dueDate,
+        paymentDate: formData.paymentDate,
         minimumDuePaid: minDuePaid
       });
       
@@ -192,10 +226,10 @@ export default function ManualEntry() {
         },
         body: JSON.stringify({
           ...data,
-          statementDate,
+          statementDate: formData.statementDate,
           transactions: formattedTransactions,
-          dueDate,
-          paymentDate,
+          dueDate: formData.dueDate,
+          paymentDate: formData.paymentDate,
           minimumDuePaid: minDuePaid
         }),
       });
@@ -264,13 +298,17 @@ export default function ManualEntry() {
       minimumDueAmount: undefined,
       minimumDuePaid: false
     });
-    setStatementDate(null);
-    setDueDate(null);
-    setPaymentDate(null);
+    setFormData({
+      bank: '',
+      statementDate: new Date(),
+      dueDate: new Date(),
+      paymentDate: new Date(),
+      transactions: [{ amount: 0, date: null }],
+      totalAmount: '',
+    });
     setCalculationResult(null);
     setIsPaid(false);
     setMinDuePaid(false);
-    setTransactions([{ amount: 0, date: null }]);
     toast.success('Form has been reset');
   };
 
@@ -303,285 +341,192 @@ export default function ManualEntry() {
   ];
 
   return (
-    <div className="space-y-10">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        {/* Bank and Basic Information */}
-        <div className="glass-panel p-6">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">Basic Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Bank Selection */}
-            <div className="space-y-2">
-              <label className="form-label-enhanced flex items-center gap-2">
-                <CreditCardIcon className="h-4 w-4 text-blue-600" />
-                Select Your Bank
-              </label>
-              <select
-                {...register('bank')}
-                className="form-select-enhanced"
-              >
-                <option value="">Select a bank</option>
-                {banks.map((bank) => (
-                  <option key={bank} value={bank}>
-                    {bank}
-                  </option>
-                ))}
-              </select>
-              {errors.bank && (
-                <p className="mt-1 text-sm text-red-600">{errors.bank.message}</p>
-              )}
-            </div>
+    <div className="max-w-4xl mx-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+          Credit Card Interest Calculator
+        </h2>
 
-            {/* Outstanding Amount */}
-            <div className="space-y-2">
-              <label htmlFor="outstandingAmount" className="form-label-enhanced flex items-center gap-2">
-                <BanknotesIcon className="h-4 w-4 text-blue-600" />
-                Outstanding Amount (₹)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-slate-500 sm:text-sm">₹</span>
-                </div>
-                <input
-                  type="number"
-                  id="outstandingAmount"
-                  step="0.01"
-                  {...register('outstandingAmount', { valueAsNumber: true })}
-                  className="form-input-enhanced pl-8"
-                  placeholder="0.00"
-                />
-              </div>
-              {errors.outstandingAmount && (
-                <p className="mt-1 text-sm text-red-600">{errors.outstandingAmount.message}</p>
-              )}
-            </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Bank Selection */}
+          <div className="space-y-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Select Bank
+            </label>
+            <select
+              name="bank"
+              value={formData.bank}
+              onChange={(e) => setValue('bank', e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              required
+            >
+              <option value="">Select a bank</option>
+              {banks.map((bank) => (
+                <option key={bank} value={bank}>
+                  {bank}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            {/* Statement Date */}
+          {/* Dates Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <label className="form-label-enhanced flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 text-blue-600" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Statement Date
               </label>
-              <div className="relative">
-                <DatePicker
-                  selected={statementDate}
-                  onChange={(date: Date | null) => handleStatementDateChange(date)}
-                  className="form-input-enhanced w-full"
-                  dateFormat="dd/MM/yyyy"
-                  placeholderText="Select statement date"
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <CalendarIcon className="h-5 w-5 text-slate-400" />
-                </div>
-              </div>
+              <DatePicker
+                selected={formData.statementDate}
+                onChange={(date: Date) => handleStatementDateChange(date)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                dateFormat="dd/MM/yyyy"
+                required
+              />
             </div>
-
-            {/* Due Date */}
             <div className="space-y-2">
-              <label className="form-label-enhanced flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 text-indigo-600" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Due Date
               </label>
-              <div className="relative">
-                <DatePicker
-                  selected={dueDate}
-                  onChange={(date: Date | null) => setDueDate(date)}
-                  className="form-input-enhanced w-full"
-                  dateFormat="dd/MM/yyyy"
-                  placeholderText="Select due date"
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <CalendarIcon className="h-5 w-5 text-slate-400" />
-                </div>
-              </div>
+              <DatePicker
+                selected={formData.dueDate}
+                onChange={(date: Date) => setValue('dueDate', date)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                dateFormat="dd/MM/yyyy"
+                required
+              />
             </div>
-
-            {/* Payment Date */}
             <div className="space-y-2">
-              <label className="form-label-enhanced flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 text-green-600" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Payment Date
               </label>
-              <div className="relative">
-                <DatePicker
-                  selected={paymentDate}
-                  onChange={(date: Date | null) => setPaymentDate(date)}
-                  className="form-input-enhanced w-full"
-                  dateFormat="dd/MM/yyyy"
-                  placeholderText="Select payment date"
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <CalendarIcon className="h-5 w-5 text-slate-400" />
-                </div>
-              </div>
+              <DatePicker
+                selected={formData.paymentDate}
+                onChange={(date: Date) => setValue('paymentDate', date)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                dateFormat="dd/MM/yyyy"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Transactions Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                Transactions
+              </h3>
+              <button
+                type="button"
+                onClick={addTransaction}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Add Transaction
+              </button>
             </div>
 
-            {/* Minimum Due Amount */}
-            <div className="space-y-2">
-              <label htmlFor="minimumDueAmount" className="form-label-enhanced flex items-center gap-2">
-                <BanknotesIcon className="h-4 w-4 text-green-600" />
-                Minimum Due Amount (₹)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-slate-500 sm:text-sm">₹</span>
-                </div>
-                <input
-                  type="number"
-                  id="minimumDueAmount"
-                  step="0.01"
-                  {...register('minimumDueAmount', { valueAsNumber: true })}
-                  className="form-input-enhanced pl-8"
-                  placeholder="0.00"
-                />
-              </div>
-              {errors.minimumDueAmount && (
-                <p className="mt-1 text-sm text-red-600">{errors.minimumDueAmount.message}</p>
-              )}
-            </div>
-          </div>
-          
-          <div className="mt-6">
-            <div className="space-y-2">
-              <label className="form-label-enhanced">Minimum Due Payment Status</label>
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className={`rounded-lg border ${minDuePaid ? 'border-green-200 bg-green-50 shadow-sm' : 'border-slate-200 bg-white'} p-4 flex items-center gap-2 cursor-pointer transition-all hover:shadow-sm`}
-                     onClick={() => handleMinDuePaidChange(true)}>
-                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${minDuePaid ? 'bg-green-600 border-green-600' : 'border-slate-300 bg-white'}`}>
-                    {minDuePaid && <CheckIcon className="h-3.5 w-3.5 text-white" />}
-                  </div>
-                  <label htmlFor="minimumDuePaid-yes" className="text-sm font-medium text-slate-700 cursor-pointer select-none">
-                    Minimum due amount paid
+            {formData.transactions.map((transaction, index) => (
+              <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Amount
                   </label>
+                  <input
+                    type="number"
+                    name={`transactions[${index}].amount`}
+                    value={transaction.amount || ''}
+                    onChange={(e) => handleTransactionAmountChange(index, e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Enter amount"
+                    required
+                  />
                 </div>
-                
-                <div className={`rounded-lg border ${!minDuePaid ? 'border-red-200 bg-red-50 shadow-sm' : 'border-slate-200 bg-white'} p-4 flex items-center gap-2 cursor-pointer transition-all hover:shadow-sm`}
-                     onClick={() => handleMinDuePaidChange(false)}>
-                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${!minDuePaid ? 'bg-red-600 border-red-600' : 'border-slate-300 bg-white'}`}>
-                    {!minDuePaid && <CheckIcon className="h-3.5 w-3.5 text-white" />}
-                  </div>
-                  <label htmlFor="minimumDuePaid-no" className="text-sm font-medium text-slate-700 cursor-pointer select-none">
-                    Minimum due amount not paid
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Date
                   </label>
+                  <DatePicker
+                    selected={transaction.date}
+                    onChange={(date: Date) => handleTransactionDateChange(index, date)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    dateFormat="dd/MM/yyyy"
+                    required
+                  />
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Transaction Details */}
-        <div className="glass-panel p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-slate-800">Transactions</h3>
-            <button 
-              type="button" 
-              onClick={addTransaction}
-              className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
-            >
-              <PlusCircleIcon className="h-5 w-5" />
-              Add Transaction
-            </button>
-          </div>
-          
-          <div className="space-y-8">
-            {transactions.map((transaction, index) => (
-              <div key={index} className="p-4 border border-slate-200 rounded-xl bg-white">
-                <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-md font-medium text-slate-800">Transaction #{index + 1}</h4>
-                  {transactions.length > 1 && (
-                    <button 
+                {formData.transactions.length > 1 && (
+                  <div className="md:col-span-2 flex justify-end">
+                    <button
                       type="button"
                       onClick={() => removeTransaction(index)}
-                      className="text-sm text-red-600 hover:text-red-800"
+                      className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 focus:outline-none"
                     >
                       Remove
                     </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Transaction Date */}
-                  <div className="space-y-2">
-                    <label className="form-label-enhanced flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-blue-600" />
-                      Transaction Date
-                    </label>
-                    <div className="relative">
-                      <DatePicker
-                        selected={transaction.date}
-                        onChange={(date: Date | null) => handleTransactionDateChange(index, date)}
-                        className="form-input-enhanced w-full"
-                        dateFormat="dd/MM/yyyy"
-                        placeholderText="Select transaction date"
-                      />
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <CalendarIcon className="h-5 w-5 text-slate-400" />
-                      </div>
-                    </div>
-                    {transaction.error && (
-                      <p className="mt-1 text-sm text-amber-600">{transaction.error}</p>
-                    )}
                   </div>
-
-                  {/* Transaction Amount */}
-                  <div className="space-y-2">
-                    <label className="form-label-enhanced flex items-center gap-2">
-                      <BanknotesIcon className="h-4 w-4 text-indigo-600" />
-                      Amount (₹)
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <span className="text-slate-500 sm:text-sm">₹</span>
-                      </div>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={transaction.amount || ''}
-                        onChange={(e) => handleTransactionAmountChange(index, e.target.value)}
-                        className="form-input-enhanced pl-8"
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             ))}
           </div>
-        </div>
 
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="btn-primary flex-1"
-          >
-            {isLoading ? (
-              <div className="flex items-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Processing...
+          {/* Total Amount */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Total Amount
+            </label>
+            <input
+              type="number"
+              name="totalAmount"
+              value={formData.totalAmount}
+              onChange={(e) => setValue('totalAmount', e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              placeholder="Enter total amount"
+              required
+            />
+          </div>
+
+          {/* Minimum Due Payment Status */}
+          <div className="space-y-2">
+            <label className="form-label-enhanced">Minimum Due Payment Status</label>
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className={`rounded-lg border ${minDuePaid ? 'border-green-200 bg-green-50 shadow-sm' : 'border-slate-200 bg-white'} p-4 flex items-center gap-2 cursor-pointer transition-all hover:shadow-sm`}
+                   onClick={() => handleMinDuePaidChange(true)}>
+                <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${minDuePaid ? 'bg-green-600 border-green-600' : 'border-slate-300 bg-white'}`}>
+                  {minDuePaid && <CheckIcon className="h-3.5 w-3.5 text-white" />}
+                </div>
+                <label htmlFor="minimumDuePaid-yes" className="text-sm font-medium text-slate-700 cursor-pointer select-none">
+                  Minimum due amount paid
+                </label>
               </div>
-            ) : (
-              <span className="inline-flex items-center">
-                <span>Calculate Now</span>
-                <ArrowLongRightIcon className="h-5 w-5 ml-2" />
-              </span>
-            )}
-          </button>
-          
-          <button 
-            type="button"
-            onClick={handleReset}
-            className="px-4 py-3 rounded-xl border border-slate-200 shadow-sm 
-              text-slate-700 bg-white hover:bg-slate-50
-              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500
-              transition-all duration-200 flex items-center justify-center"
-          >
-            <ArrowPathIcon className="h-5 w-5 mr-2" />
-            Reset
-          </button>
-        </div>
-      </form>
+              
+              <div className={`rounded-lg border ${!minDuePaid ? 'border-red-200 bg-red-50 shadow-sm' : 'border-slate-200 bg-white'} p-4 flex items-center gap-2 cursor-pointer transition-all hover:shadow-sm`}
+                   onClick={() => handleMinDuePaidChange(false)}>
+                <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${!minDuePaid ? 'bg-red-600 border-red-600' : 'border-slate-300 bg-white'}`}>
+                  {!minDuePaid && <CheckIcon className="h-3.5 w-3.5 text-white" />}
+                </div>
+                <label htmlFor="minimumDuePaid-no" className="text-sm font-medium text-slate-700 cursor-pointer select-none">
+                  Minimum due amount not paid
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="w-full sm:w-auto px-6 py-3 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+            >
+              Reset
+            </button>
+            <button
+              type="submit"
+              className="w-full sm:w-auto px-6 py-3 text-base font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Calculate
+            </button>
+          </div>
+        </form>
+      </div>
 
       {calculationResult && (
         <div className="space-y-6">
