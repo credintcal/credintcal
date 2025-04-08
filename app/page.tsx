@@ -54,53 +54,48 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Features with improved visuals */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Feature 1 */}
-        <div className="glass-card p-6 card-hover-effect">
-          <div className="flex items-start space-x-4">
-            <div className="flex-shrink-0 rounded-lg p-3 bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100/80">
-              <SparklesIcon className="h-6 w-6 text-purple-600" />
+      {/* Features Section */}
+      <section className="py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Key Features
+            </h2>
+            <p className="mt-4 text-xl text-gray-600 dark:text-gray-400">
+              Everything you need to calculate your credit card interest and fees
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="glass-card p-6">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Multiple Transactions
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Add multiple transactions and see how they affect your total interest charges.
+              </p>
             </div>
-            <div>
-              <h3 className="font-semibold text-slate-900 text-lg">Instant Results</h3>
-              <p className="mt-2 text-slate-600 text-sm">
-                Get immediate calculations for your credit card charges and know exactly what you'll pay.
+
+            <div className="glass-card p-6">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Bank-Specific Calculations
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Get accurate calculations based on your bank's specific policies and rates.
+              </p>
+            </div>
+
+            <div className="glass-card p-6">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                PDF Reports
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Download detailed PDF reports of your calculations for future reference.
               </p>
             </div>
           </div>
         </div>
-        
-        {/* Feature 2 */}
-        <div className="glass-card p-6 card-hover-effect">
-          <div className="flex items-start space-x-4">
-            <div className="flex-shrink-0 rounded-lg p-3 bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100/80">
-              <CreditCardIcon className="h-6 w-6 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900 text-lg">Supports All Banks</h3>
-              <p className="mt-2 text-slate-600 text-sm">
-                Works with all major Indian banks including HDFC, SBI, ICICI, Axis, and more.
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        {/* Feature 3 */}
-        <div className="glass-card p-6 card-hover-effect">
-          <div className="flex items-start space-x-4">
-            <div className="flex-shrink-0 rounded-lg p-3 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100/80">
-              <ShieldCheckIcon className="h-6 w-6 text-green-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900 text-lg">100% Accurate</h3>
-              <p className="mt-2 text-slate-600 text-sm">
-                Our calculations follow the exact same formula used by banks to determine your charges.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
 
       {/* Calculator Tabs - Enhanced with improved visuals */}
       <div className="relative">
@@ -173,53 +168,6 @@ export default function Home() {
               </Tab.Panel>
             </Tab.Panels>
           </Tab.Group>
-        </div>
-      </div>
-      
-      {/* FAQ Section */}
-      <div className="glass-panel p-8 sm:p-10">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-6 text-center">
-            Frequently Asked Questions
-          </h2>
-          
-          <div className="space-y-6">
-            <div className="glass-card p-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-2 flex items-center">
-                <BanknotesIcon className="h-5 w-5 mr-2 text-blue-600" />
-                How is credit card interest calculated?
-              </h3>
-              <p className="text-slate-600">
-                Credit card interest is typically calculated daily, based on your average daily balance. 
-                The formula used is: (Outstanding Balance × Daily Interest Rate × Number of Days). 
-                Our calculator takes into account the exact number of days between your transaction and payment dates.
-              </p>
-            </div>
-            
-            <div className="glass-card p-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-2 flex items-center">
-                <ShieldCheckIcon className="h-5 w-5 mr-2 text-blue-600" />
-                Are my credit card details safe?
-              </h3>
-              <p className="text-slate-600">
-                Yes, absolutely. We don't store your full credit card information. When you upload PDF statements, 
-                we only extract the necessary transaction details to perform the calculations. All calculations 
-                are done securely on our servers.
-              </p>
-            </div>
-            
-            <div className="glass-card p-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-2 flex items-center">
-                <CreditCardIcon className="h-5 w-5 mr-2 text-blue-600" />
-                Which banks are supported?
-              </h3>
-              <p className="text-slate-600">
-                Our calculator supports all major Indian banks including HDFC, SBI, ICICI, Axis, Kotak, Yes Bank, 
-                PNB, IDFC, American Express, and Citibank. Each bank has its own specific rules for calculating 
-                late fees, which our system accurately incorporates.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
