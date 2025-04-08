@@ -96,6 +96,15 @@ export default function Header() {
           </motion.div>
         </div>
       </div>
+
+      <nav className="hidden md:flex space-x-8">
+        <Link href="/" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+          Calculator
+        </Link>
+        <Link href="/privacy" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+          Privacy
+        </Link>
+      </nav>
     </div>
   );
 } 
